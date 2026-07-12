@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, User, Eye, EyeOff, Truck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, registerUser } from '../api/auth.api';
 
@@ -7,516 +8,252 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState('signin'); // 'signin' | 'register'
+  const [tab, setTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-
-  // Sign-in fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  // Register fields
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-
-  const [error, setError] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [form, setForm] = useState({
+    name: '', email: '', password: '', confirm: '',
+  });
+
+  const set = (field) => (e) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    setError('');
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (tab === 'register' && form.password !== form.confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (tab === 'register' && form.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await loginUser({ email, password });
+      const res = tab === 'login'
+        ? await loginUser({ email: form.email, password: form.password })
+        : await registerUser({ name: form.name, email: form.email, password: form.password });
+
       login(res.data.user, res.data.token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Check your credentials.');
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const switchTab = (t) => {
+    setTab(t);
     setError('');
-    setLoading(true);
-    try {
-      const res = await registerUser({ name: regName, email: regEmail, password: regPassword });
-      login(res.data.user, res.data.token);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setForm({ name: '', email: '', password: '', confirm: '' });
   };
 
   return (
-    <div style={styles.page}>
-      {/* ── Left panel ── */}
-      <div style={styles.left}>
-        <div style={styles.brand}>
-          <div style={styles.brandIcon}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="1" y="3" width="15" height="13" rx="2" />
-              <path d="M16 8h4l3 5v3h-7V8z" />
-              <circle cx="5.5" cy="18.5" r="2.5" />
-              <circle cx="18.5" cy="18.5" r="2.5" />
-            </svg>
+    <div className="auth-page">
+      {/* Left panel */}
+      <div className="auth-left">
+        <div className="auth-left-content">
+          <div className="auth-left-brand">
+            <div className="auth-brand-icon">
+              <Truck size={20} color="#fff" strokeWidth={2.5} />
+            </div>
+            <span className="auth-brand-name">
+              Transit<span>Ops</span>
+            </span>
           </div>
-          <span style={styles.brandText}><span style={styles.brandBold}>Transit</span><span style={styles.brandAccent}>Ops</span></span>
-        </div>
 
-        <div style={styles.hero}>
-          <h2 style={styles.heroTitle}>
+          <h1 className="auth-headline">
             Manage your fleet<br />
-            <span style={styles.heroAccent}>smarter, faster.</span>
-          </h2>
-          <p style={styles.heroSub}>
+            <span>smarter, faster.</span>
+          </h1>
+          <p className="auth-subline">
             A unified operations platform for real-time vehicle tracking,
             driver management, trip dispatch, and financial reporting.
           </p>
 
-          <ul style={styles.featureList}>
+          <div className="auth-features">
             {[
               'Real-time vehicle tracking',
               'Driver safety scoring',
               'Automated maintenance alerts',
               'Financial analytics & reporting',
             ].map((f) => (
-              <li key={f} style={styles.featureItem}>
-                <span style={styles.featureDot} />
-                {f}
-              </li>
+              <div className="auth-feature" key={f}>
+                <div className="auth-feature-dot" />
+                <span>{f}</span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       </div>
 
-      {/* ── Right panel ── */}
-      <div style={styles.right}>
-        <div style={styles.formBox}>
-          <h2 style={styles.welcomeTitle}>Welcome back</h2>
-          <p style={styles.welcomeSub}>Sign in to your TransitOps workspace</p>
+      {/* Right panel */}
+      <div className="auth-right">
+        <div className="auth-box">
+          <h2 className="auth-box-title">
+            {tab === 'login' ? 'Welcome back' : 'Create your account'}
+          </h2>
+          <p className="auth-box-subtitle">
+            {tab === 'login'
+              ? 'Sign in to your TransitOps workspace'
+              : 'Get started with TransitOps today'}
+          </p>
 
           {/* Tabs */}
-          <div style={styles.tabs}>
+          <div className="auth-tabs">
             <button
-              style={{ ...styles.tab, ...(tab === 'signin' ? styles.tabActive : {}) }}
-              onClick={() => { setTab('signin'); setError(''); }}
+              className={`auth-tab${tab === 'login' ? ' active' : ''}`}
+              onClick={() => switchTab('login')}
+              type="button"
             >
               Sign In
             </button>
             <button
-              style={{ ...styles.tab, ...(tab === 'register' ? styles.tabActive : {}) }}
-              onClick={() => { setTab('register'); setError(''); }}
+              className={`auth-tab${tab === 'register' ? ' active' : ''}`}
+              onClick={() => switchTab('register')}
+              type="button"
             >
               Register
             </button>
           </div>
 
-          {error && <div style={styles.errorBox}>{error}</div>}
-
-          {/* Sign In Form */}
-          {tab === 'signin' && (
-            <form onSubmit={handleSignIn}>
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Email Address <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                  </span>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoFocus
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Password <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    style={{ ...styles.input, paddingRight: 40 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                        <line x1="1" y1="1" x2="23" y2="23" />
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" style={styles.submitBtn} disabled={loading}>
-                {loading ? 'Signing in…' : 'Sign In'}
-              </button>
-
-              <p style={styles.switchText}>
-                Don't have an account?{' '}
-                <button type="button" style={styles.switchLink} onClick={() => { setTab('register'); setError(''); }}>
-                  Register here
-                </button>
-              </p>
-            </form>
+          {/* Error */}
+          {error && (
+            <div className="alert alert-error">
+              <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+              {error}
+            </div>
           )}
 
-          {/* Register Form */}
-          {tab === 'register' && (
-            <form onSubmit={handleRegister}>
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Full Name <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </span>
+          <form onSubmit={handleSignIn} autoComplete="off" noValidate>
+
+            {/* Full name — register only */}
+            {tab === 'register' && (
+              <div className="form-group">
+                <label className="form-label form-label-required">Full Name</label>
+                <div className="input-group">
+                  <span className="input-icon"><User size={15} /></span>
                   <input
+                    className="form-control"
                     type="text"
                     placeholder="Enter your full name"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
+                    value={form.name}
+                    onChange={set('name')}
+                    autoComplete="off"
                     required
-                    autoFocus
-                    style={styles.input}
                   />
                 </div>
               </div>
+            )}
 
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Email Address <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                  </span>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    required
-                    style={styles.input}
-                  />
-                </div>
+            {/* Email */}
+            <div className="form-group">
+              <label className="form-label form-label-required">Email Address</label>
+              <div className="input-group">
+                <span className="input-icon"><Mail size={15} /></span>
+                <input
+                  className="form-control"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={form.email}
+                  onChange={set('email')}
+                  autoComplete="off"
+                  required
+                />
               </div>
+            </div>
 
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Password <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </span>
+            {/* Password */}
+            <div className="form-group">
+              <label className="form-label form-label-required">Password</label>
+              <div className="input-group">
+                <span className="input-icon"><Lock size={15} /></span>
+                <input
+                  className="form-control"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={form.password}
+                  onChange={set('password')}
+                  autoComplete="new-password"
+                  required
+                  style={{ paddingRight: 42 }}
+                />
+                <button
+                  type="button"
+                  className="input-icon-right"
+                  onClick={() => setShowPassword((p) => !p)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm password — register only */}
+            {tab === 'register' && (
+              <div className="form-group">
+                <label className="form-label form-label-required">Confirm Password</label>
+                <div className="input-group">
+                  <span className="input-icon"><Lock size={15} /></span>
                   <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="form-control"
+                    type={showConfirm ? 'text' : 'password'}
+                    placeholder="Confirm your password"
+                    value={form.confirm}
+                    onChange={set('confirm')}
+                    autoComplete="new-password"
                     required
-                    style={{ ...styles.input, paddingRight: 40 }}
+                    style={{ paddingRight: 42 }}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
+                    className="input-icon-right"
+                    onClick={() => setShowConfirm((p) => !p)}
                     tabIndex={-1}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
+                    {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
+            )}
 
-              <button type="submit" style={styles.submitBtn} disabled={loading}>
-                {loading ? 'Creating account…' : 'Create Account'}
-              </button>
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', marginTop: 6, justifyContent: 'center' }}
+              disabled={loading}
+            >
+              {loading && <span className="spinner" />}
+              {loading
+                ? (tab === 'login' ? 'Signing in…' : 'Creating account…')
+                : (tab === 'login' ? 'Sign In' : 'Create Account')}
+            </button>
+          </form>
 
-              <p style={styles.switchText}>
-                Already have an account?{' '}
-                <button type="button" style={styles.switchLink} onClick={() => { setTab('signin'); setError(''); }}>
-                  Sign in here
-                </button>
-              </p>
-            </form>
-          )}
+          <p style={{ marginTop: 20, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
+            {tab === 'login'
+              ? "Don't have an account? "
+              : 'Already have an account? '}
+            <button
+              onClick={() => switchTab(tab === 'login' ? 'register' : 'login')}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
+            >
+              {tab === 'login' ? 'Register here' : 'Sign in'}
+            </button>
+          </p>
         </div>
       </div>
     </div>
   );
-};
-
-const styles = {
-  page: {
-    display: 'flex',
-    minHeight: '100vh',
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-  },
-
-  // Left dark panel
-  left: {
-    flex: 1,
-    background: 'linear-gradient(150deg, #0c1829 0%, #0f2847 50%, #0c1829 100%)',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '40px 48px',
-    color: '#fff',
-  },
-  brand: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 'auto',
-  },
-  brandIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    background: '#2563eb',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
-    fontSize: 20,
-    fontWeight: 700,
-    letterSpacing: '-0.3px',
-  },
-  brandBold: { color: '#fff' },
-  brandAccent: { color: '#3b82f6' },
-
-  hero: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    maxWidth: 480,
-  },
-  heroTitle: {
-    fontSize: 36,
-    fontWeight: 800,
-    lineHeight: 1.25,
-    marginBottom: 16,
-    color: '#fff',
-  },
-  heroAccent: {
-    color: '#3b82f6',
-  },
-  heroSub: {
-    fontSize: 14,
-    color: '#94a3b8',
-    lineHeight: 1.7,
-    marginBottom: 32,
-    maxWidth: 380,
-  },
-  featureList: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-  },
-  featureItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    fontSize: 14,
-    color: '#cbd5e1',
-  },
-  featureDot: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    background: '#3b82f6',
-    flexShrink: 0,
-  },
-
-  // Right white panel
-  right: {
-    width: 480,
-    flexShrink: 0,
-    background: '#fff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 48px',
-  },
-  formBox: {
-    width: '100%',
-    maxWidth: 360,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: 700,
-    color: '#0f172a',
-    marginBottom: 4,
-  },
-  welcomeSub: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 24,
-  },
-
-  // Tabs
-  tabs: {
-    display: 'flex',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  tab: {
-    flex: 1,
-    padding: '9px 0',
-    border: 'none',
-    background: 'transparent',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#64748b',
-    cursor: 'pointer',
-    transition: 'background 0.15s, color 0.15s',
-  },
-  tabActive: {
-    background: '#fff',
-    color: '#0f172a',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-  },
-
-  errorBox: {
-    background: '#fee2e2',
-    color: '#b91c1c',
-    padding: '10px 14px',
-    borderRadius: 7,
-    fontSize: 13,
-    marginBottom: 16,
-  },
-
-  // Form fields
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#374151',
-    marginBottom: 6,
-  },
-  inputWrap: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: 12,
-    display: 'flex',
-    alignItems: 'center',
-    pointerEvents: 'none',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 12px 10px 38px',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    fontSize: 13,
-    color: '#0f172a',
-    outline: 'none',
-    transition: 'border-color 0.15s',
-    background: '#fff',
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: 10,
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    padding: 2,
-  },
-
-  submitBtn: {
-    width: '100%',
-    padding: '11px',
-    background: '#2563eb',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    marginTop: 4,
-    transition: 'background 0.15s',
-  },
-
-  switchText: {
-    marginTop: 16,
-    fontSize: 12,
-    color: '#64748b',
-    textAlign: 'center',
-  },
-  switchLink: {
-    background: 'none',
-    border: 'none',
-    color: '#2563eb',
-    fontWeight: 600,
-    cursor: 'pointer',
-    fontSize: 12,
-    padding: 0,
-  },
 };
 
 export default Login;

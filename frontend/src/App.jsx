@@ -54,6 +54,13 @@ const App = () => (
       </AuthProvider>
     </ThemeProvider>
   </BrowserRouter>
+  <ThemeProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  </ThemeProvider>
 );
 
 export default App;

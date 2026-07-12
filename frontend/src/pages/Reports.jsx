@@ -1,5 +1,5 @@
-import React from 'react';
-import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2, FileText, FileType } from 'lucide-react';
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -133,9 +133,75 @@ const ChartTooltip = ({ active, payload, label, unit = '' }) => {
   );
 };
 
+// ─── Export helpers ───────────────────────────────────────────────────────────
+
+const exportAsTxt = () => {
+  const now = new Date().toLocaleString();
+  const lines = [
+    '================================================',
+    '         TRANSITOPS — ANALYTICS REPORT          ',
+    '================================================',
+    `Generated: ${now}`,
+    '',
+    '── KPI SUMMARY ─────────────────────────────────',
+    `Fleet Utilization   : 82%    (+5.1% vs last period)`,
+    `Fuel Efficiency     : 6.4 km/L  (+1.9%)`,
+    `Vehicle ROI         : 17.2%  (+1.4%)`,
+    `Cost per KM         : $0.42  (-2.3%)`,
+    '',
+    '── FLEET UTILIZATION (Last 12 months) ───────────',
+    'Month   Utilization(%)',
+    ...fleetUtilizationData.map(d => `${d.month.padEnd(8)}${d.utilization}%`),
+    '',
+    '── FUEL EFFICIENCY (Last 12 months) ─────────────',
+    'Month   km/L',
+    ...fuelEfficiencyData.map(d => `${d.month.padEnd(8)}${d.efficiency}`),
+    '',
+    '── VEHICLE ROI (Last 12 months) ─────────────────',
+    'Month   ROI(%)',
+    ...vehicleRoiData.map(d => `${d.month.padEnd(8)}${d.roi}%`),
+    '',
+    '── COST TRENDS (Last 12 months) ─────────────────',
+    'Month   Cost/km($)',
+    ...costTrendsData.map(d => `${d.month.padEnd(8)}$${d.costPerKm}`),
+    '',
+    '================================================',
+    '  TransitOps — Smart Transport Operations       ',
+    '================================================',
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `transitops-report-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportAsPdf = (reportRef) => {
+  const style = document.createElement('style');
+  style.textContent = `
+    @media print {
+      body * { visibility: hidden; }
+      #report-print-area, #report-print-area * { visibility: visible; }
+      #report-print-area {
+        position: fixed; top: 0; left: 0; width: 100%;
+        background: #fff; color: #000; padding: 24px;
+      }
+      .recharts-wrapper { page-break-inside: avoid; }
+    }
+  `;
+  document.head.appendChild(style);
+  window.print();
+  document.head.removeChild(style);
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Reports = () => {
+  const [showFormatMenu, setShowFormatMenu] = useState(false);
+  const reportRef = useRef(null);
+
   return (
     <>
       {/* ── Header ── */}
@@ -144,18 +210,71 @@ const Reports = () => {
           <h1>Reports &amp; Analytics</h1>
           <p>Deep insights into utilization, efficiency and ROI.</p>
         </div>
-        <button
-          className="btn"
-          style={{
-            background: 'linear-gradient(135deg, #16A34A, #15803D)',
-            color: '#fff',
-            boxShadow: '0 1px 3px rgba(22,163,74,0.35)',
-          }}
-        >
-          <Download size={15} strokeWidth={2} />
-          Export Report
-        </button>
+
+        {/* Export button with dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            className="btn"
+            style={{ background: 'linear-gradient(135deg,#16A34A,#15803D)', color: '#fff', boxShadow: '0 1px 3px rgba(22,163,74,0.35)' }}
+            onClick={() => setShowFormatMenu(v => !v)}
+          >
+            <Download size={15} strokeWidth={2} />
+            Export Report
+          </button>
+
+          {showFormatMenu && (
+            <>
+              {/* backdrop */}
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                onClick={() => setShowFormatMenu(false)}
+              />
+              {/* dropdown */}
+              <div style={{
+                position: 'absolute', top: '110%', right: 0, zIndex: 99,
+                background: '#fff', border: '1px solid #E5E7EB',
+                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                minWidth: 200, overflow: 'hidden',
+              }}>
+                <div style={{ padding: '10px 14px 6px', fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  Choose format
+                </div>
+                <button
+                  onClick={() => { exportAsTxt(); setShowFormatMenu(false); }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#111827', textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ width: 32, height: 32, borderRadius: 7, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
+                    <FileText size={16} />
+                  </span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Export as TXT</div>
+                    <div style={{ fontSize: 11, color: '#6B7280' }}>Plain text report file</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { exportAsPdf(reportRef); setShowFormatMenu(false); }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#111827', textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ width: 32, height: 32, borderRadius: 7, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626', flexShrink: 0 }}>
+                    <FileType size={16} />
+                  </span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Export as PDF</div>
+                    <div style={{ fontSize: 11, color: '#6B7280' }}>Print to PDF via browser</div>
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* ── Printable area starts here ── */}
+      <div id="report-print-area" ref={reportRef}>
 
       {/* ── KPI Cards ── */}
       <div className="stats-grid" style={{ marginBottom: 28 }}>
@@ -320,6 +439,7 @@ const Reports = () => {
           </div>
         </div>
       </div>
+      </div> {/* end printable area */}
     </>
   );
 };

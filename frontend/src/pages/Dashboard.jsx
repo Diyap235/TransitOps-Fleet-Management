@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Truck, UserRound, Route, Wrench, BarChart3,
   TrendingUp, TrendingDown, Activity,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getVehicles } from '../api/vehicles.api';
+import { getDrivers } from '../api/drivers.api';
+import { getTrips } from '../api/trips.api';
+import { getMaintenanceRecords } from '../api/maintenance.api';
 
 // ── Stat card config — accent colours map to DC tokens ──────────
 const STATS = [
@@ -94,12 +98,23 @@ const QUICK = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats]       = useState({ vehicles: '—', trips: '—', drivers: '—', maintenance: '—' });
+  const [recentTrips, setRecentTrips]         = useState([]);
+  const [recentMaint, setRecentMaint]         = useState([]);
+  const [loading, setLoading]   = useState(true);
 
   // ── greeting logic unchanged ──────────────────────────────────
   const now  = new Date();
   const hour = now.getHours();
   const greeting =
     hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const STAT_CARDS = [
+    { label: 'Total Vehicles',     value: stats.vehicles,    Icon: Truck,     color: 'blue'   },
+    { label: 'Active Trips',       value: stats.trips,       Icon: Route,     color: 'green'  },
+    { label: 'Drivers Available',  value: stats.drivers,     Icon: UserRound, color: 'purple' },
+    { label: 'Open Maintenance',   value: stats.maintenance, Icon: Wrench,    color: 'orange' },
+  ];
 
   return (
     <>
@@ -200,6 +215,7 @@ const Dashboard = () => {
             the moment your fleet starts reporting in.
           </p>
         </div>
+
       </div>
     </>
   );

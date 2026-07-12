@@ -1,160 +1,325 @@
-import React, { useState } from 'react';
-import { BarChart3, Fuel, Receipt, Route, Download } from 'lucide-react';
+import React from 'react';
+import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2 } from 'lucide-react';
+import {
+  AreaChart, Area,
+  BarChart, Bar,
+  LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts';
 
-const TABS = [
-  { id: 'fuel',     label: 'Fuel Logs',     Icon: Fuel    },
-  { id: 'expenses', label: 'Expenses',      Icon: Receipt },
-  { id: 'trips',    label: 'Trip Summary',  Icon: Route   },
+// ─── Dummy data ───────────────────────────────────────────────────────────────
+
+const fleetUtilizationData = [
+  { month: 'Jan', utilization: 68 },
+  { month: 'Feb', utilization: 72 },
+  { month: 'Mar', utilization: 75 },
+  { month: 'Apr', utilization: 70 },
+  { month: 'May', utilization: 78 },
+  { month: 'Jun', utilization: 74 },
+  { month: 'Jul', utilization: 80 },
+  { month: 'Aug', utilization: 77 },
+  { month: 'Sep', utilization: 82 },
+  { month: 'Oct', utilization: 79 },
+  { month: 'Nov', utilization: 83 },
+  { month: 'Dec', utilization: 82 },
 ];
 
-const SUMMARY_STATS = [
-  { label: 'Total Trips',      value: '—', color: 'blue'   },
-  { label: 'Completed',        value: '—', color: 'green'  },
-  { label: 'Cancelled',        value: '—', color: 'red'    },
-  { label: 'Total Distance',   value: '— km', color: 'purple' },
+const fuelEfficiencyData = [
+  { month: 'Jan', efficiency: 5.8 },
+  { month: 'Feb', efficiency: 5.9 },
+  { month: 'Mar', efficiency: 6.0 },
+  { month: 'Apr', efficiency: 5.7 },
+  { month: 'May', efficiency: 6.1 },
+  { month: 'Jun', efficiency: 6.2 },
+  { month: 'Jul', efficiency: 6.0 },
+  { month: 'Aug', efficiency: 6.3 },
+  { month: 'Sep', efficiency: 6.1 },
+  { month: 'Oct', efficiency: 6.4 },
+  { month: 'Nov', efficiency: 6.3 },
+  { month: 'Dec', efficiency: 6.4 },
 ];
 
-const COLOR_MAP = {
-  blue:   { icon: '#2563EB', bg: '#EFF6FF' },
-  green:  { icon: '#16A34A', bg: '#F0FDF4' },
-  orange: { icon: '#D97706', bg: '#FFFBEB' },
-  red:    { icon: '#DC2626', bg: '#FEF2F2' },
-  purple: { icon: '#7C3AED', bg: '#F5F3FF' },
+const vehicleRoiData = [
+  { month: 'Jan', roi: 14.2 },
+  { month: 'Feb', roi: 14.8 },
+  { month: 'Mar', roi: 15.1 },
+  { month: 'Apr', roi: 14.5 },
+  { month: 'May', roi: 15.6 },
+  { month: 'Jun', roi: 15.9 },
+  { month: 'Jul', roi: 16.0 },
+  { month: 'Aug', roi: 16.4 },
+  { month: 'Sep', roi: 16.8 },
+  { month: 'Oct', roi: 16.5 },
+  { month: 'Nov', roi: 17.0 },
+  { month: 'Dec', roi: 17.2 },
+];
+
+const costTrendsData = [
+  { month: 'Jan', costPerKm: 0.51 },
+  { month: 'Feb', costPerKm: 0.49 },
+  { month: 'Mar', costPerKm: 0.48 },
+  { month: 'Apr', costPerKm: 0.50 },
+  { month: 'May', costPerKm: 0.47 },
+  { month: 'Jun', costPerKm: 0.46 },
+  { month: 'Jul', costPerKm: 0.47 },
+  { month: 'Aug', costPerKm: 0.45 },
+  { month: 'Sep', costPerKm: 0.44 },
+  { month: 'Oct', costPerKm: 0.43 },
+  { month: 'Nov', costPerKm: 0.44 },
+  { month: 'Dec', costPerKm: 0.42 },
+];
+
+// ─── KPI cards config ─────────────────────────────────────────────────────────
+
+const KPI_CARDS = [
+  {
+    label: 'Fleet Utilization',
+    value: '82%',
+    trend: '+5.1%',
+    up: true,
+    icon: Gauge,
+    iconBg: '#EFF6FF',
+    iconColor: '#2563EB',
+  },
+  {
+    label: 'Fuel Efficiency',
+    value: '6.4 km/L',
+    trend: '+1.9%',
+    up: true,
+    icon: Fuel,
+    iconBg: '#F0FDF4',
+    iconColor: '#16A34A',
+  },
+  {
+    label: 'Vehicle ROI',
+    value: '17.2%',
+    trend: '+1.4%',
+    up: true,
+    icon: BarChart2,
+    iconBg: '#F5F3FF',
+    iconColor: '#7C3AED',
+  },
+  {
+    label: 'Cost per KM',
+    value: '$0.42',
+    trend: '-2.3%',
+    up: false,
+    icon: DollarSign,
+    iconBg: '#FFF7ED',
+    iconColor: '#EA580C',
+  },
+];
+
+// ─── Custom tooltip ───────────────────────────────────────────────────────────
+
+const ChartTooltip = ({ active, payload, label, unit = '' }) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div style={{
+      background: '#fff',
+      border: '1px solid #E5E7EB',
+      borderRadius: 10,
+      padding: '10px 14px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+      fontSize: 13,
+    }}>
+      <p style={{ fontWeight: 600, color: '#111827', marginBottom: 4 }}>{label}</p>
+      {payload.map((entry) => (
+        <p key={entry.dataKey} style={{ color: entry.color, margin: 0 }}>
+          {entry.name}: <strong>{entry.value}{unit}</strong>
+        </p>
+      ))}
+    </div>
+  );
 };
 
-const Reports = () => {
-  const [activeTab, setActiveTab] = useState('fuel');
+// ─── Component ────────────────────────────────────────────────────────────────
 
+const Reports = () => {
   return (
     <>
+      {/* ── Header ── */}
       <div className="page-header">
         <div className="page-header-left">
-          <h1>Reports</h1>
-          <p>Fuel consumption, expenses, and operational analytics.</p>
+          <h1>Reports &amp; Analytics</h1>
+          <p>Deep insights into utilization, efficiency and ROI.</p>
         </div>
-        <button className="btn btn-secondary">
+        <button
+          className="btn"
+          style={{
+            background: 'linear-gradient(135deg, #16A34A, #15803D)',
+            color: '#fff',
+            boxShadow: '0 1px 3px rgba(22,163,74,0.35)',
+          }}
+        >
           <Download size={15} strokeWidth={2} />
-          Export CSV
+          Export Report
         </button>
       </div>
 
-      {/* Tab bar */}
-      <div className="tab-bar">
-        {TABS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            className={`tab-btn${activeTab === id ? ' active' : ''}`}
-            onClick={() => setActiveTab(id)}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <Icon size={14} strokeWidth={2} />
-              {label}
-            </span>
-          </button>
+      {/* ── KPI Cards ── */}
+      <div className="stats-grid" style={{ marginBottom: 28 }}>
+        {KPI_CARDS.map(({ label, value, trend, up, icon: Icon, iconBg, iconColor }) => (
+          <div className="stat-card" key={label}>
+            <div className="stat-card-header">
+              <div
+                className="stat-card-icon"
+                style={{ background: iconBg, color: iconColor }}
+              >
+                <Icon size={18} strokeWidth={2} />
+              </div>
+              <span
+                className={up ? 'trend-up' : 'trend-down'}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                }}
+              >
+                {up
+                  ? <TrendingUp size={13} strokeWidth={2.5} />
+                  : <TrendingDown size={13} strokeWidth={2.5} />}
+                {trend}
+              </span>
+            </div>
+            <div className="stat-card-value">{value}</div>
+            <div className="stat-card-label">{label}</div>
+          </div>
         ))}
       </div>
 
-      {/* Fuel Logs */}
-      {activeTab === 'fuel' && (
+      {/* ── Charts – top row ── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 20,
+          marginBottom: 20,
+        }}
+      >
+        {/* Fleet Utilization – Area */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Fuel Log Records</span>
+            <span className="card-title">Fleet Utilization</span>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (%)</span>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Vehicle</th>
-                  <th>Liters</th>
-                  <th>Cost</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={4}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon">
-                        <Fuel size={22} strokeWidth={1.5} />
-                      </div>
-                      <h3>No fuel logs</h3>
-                      <p>Fuel records will appear here once drivers start logging fill-ups.</p>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="card-body" style={{ padding: '16px 8px 8px' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={fleetUtilizationData} margin={{ top: 4, right: 16, left: -16, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradUtil" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[60, 90]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip unit="%" />} />
+                <Area
+                  type="monotone"
+                  dataKey="utilization"
+                  name="Utilization"
+                  stroke="#2563EB"
+                  strokeWidth={2.5}
+                  fill="url(#gradUtil)"
+                  dot={false}
+                  activeDot={{ r: 5, fill: '#2563EB', strokeWidth: 0 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      )}
 
-      {/* Expenses */}
-      {activeTab === 'expenses' && (
+        {/* Fuel Efficiency – Bar */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">Expense Records</span>
+            <span className="card-title">Fuel Efficiency</span>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (km/L)</span>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Vehicle</th>
-                  <th>Type</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={4}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon">
-                        <Receipt size={22} strokeWidth={1.5} />
-                      </div>
-                      <h3>No expenses recorded</h3>
-                      <p>Vehicle expenses will appear here once they are logged.</p>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="card-body" style={{ padding: '16px 8px 8px' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={fuelEfficiencyData} margin={{ top: 4, right: 16, left: -16, bottom: 0 }} barSize={18}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[5.4, 6.6]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip unit=" km/L" />} />
+                <Bar
+                  dataKey="efficiency"
+                  name="Efficiency"
+                  fill="#16A34A"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Trip Summary */}
-      {activeTab === 'trips' && (
-        <>
-          <div className="stats-grid" style={{ marginBottom: 20 }}>
-            {SUMMARY_STATS.map(({ label, value, color }) => {
-              const c = COLOR_MAP[color];
-              return (
-                <div className="stat-card" key={label}>
-                  <div className="stat-card-header">
-                    <div className="stat-card-icon" style={{ background: c.bg, color: c.icon }}>
-                      <BarChart3 size={18} strokeWidth={2} />
-                    </div>
-                  </div>
-                  <div className="stat-card-value">{value}</div>
-                  <div className="stat-card-label">{label}</div>
-                </div>
-              );
-            })}
+      {/* ── Charts – bottom row ── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 20,
+        }}
+      >
+        {/* Vehicle ROI – Line */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Vehicle ROI</span>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (%)</span>
           </div>
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Trip Details</span>
-            </div>
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <Route size={22} strokeWidth={1.5} />
-              </div>
-              <h3>No trip data available</h3>
-              <p>Trip summaries will populate once trips are completed.</p>
-            </div>
+          <div className="card-body" style={{ padding: '16px 8px 8px' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={vehicleRoiData} margin={{ top: 4, right: 16, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[13, 18]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip unit="%" />} />
+                <Line
+                  type="monotone"
+                  dataKey="roi"
+                  name="ROI"
+                  stroke="#7C3AED"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: '#7C3AED', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#7C3AED', strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Cost Trends – Line */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Cost Trends</span>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months ($/km)</span>
+          </div>
+          <div className="card-body" style={{ padding: '16px 8px 8px' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={costTrendsData} margin={{ top: 4, right: 16, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0.38, 0.55]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip unit=" $/km" />} />
+                <Line
+                  type="monotone"
+                  dataKey="costPerKm"
+                  name="Cost/km"
+                  stroke="#EA580C"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: '#EA580C', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#EA580C', strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </>
   );
 };

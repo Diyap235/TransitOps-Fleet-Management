@@ -1,3 +1,4 @@
+import DriverModal from "../components/DriverModal";
 import React, { useEffect, useState } from 'react';
 import { UserRound, Plus, Pencil, Trash2, Search, X, AlertCircle } from 'lucide-react';
 import { getDrivers, createDriver, updateDriver, deleteDriver } from '../api/drivers.api';
@@ -50,15 +51,10 @@ const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
 const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
 
-  const load = () => { setLoading(true); getDrivers().then(res => setDrivers(res.data)).catch(() => {}).finally(() => setLoading(false)); };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // TODO: getDrivers().then(res => setDrivers(res.data));
+  }, []);
 
   const openAdd = () => { setEditing(null); setForm(EMPTY_FORM); setError(''); setModalOpen(true); };
   const openEdit = (d) => {
@@ -93,8 +89,14 @@ const Drivers = () => {
       {modalOpen && <Modal title={editing ? 'Edit Driver' : 'Add Driver'} onClose={() => setModalOpen(false)} onSubmit={handleSubmit} form={form} setForm={setForm} loading={saving} error={error} />}
 
       <div className="page-header">
-        <div className="page-header-left"><h1>Drivers</h1><p>Manage drivers, licenses and safety scores.</p></div>
-        <button className="btn btn-primary" onClick={openAdd}><Plus size={15} />Add Driver</button>
+        <div className="page-header-left">
+          <h1>Drivers</h1>
+          <p>Manage drivers, licenses, and safety scores.</p>
+        </div>
+        <button className="btn btn-primary">
+          <Plus size={15} strokeWidth={2.5} />
+          Add Driver
+        </button>
       </div>
 
       <div className="card">
@@ -103,6 +105,10 @@ const Drivers = () => {
           <div className="search-bar"><span className="search-bar-icon"><Search size={14} /></span>
             <input type="text" placeholder="Search drivers..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <DriverModal
+    open={openModal}
+    onClose={() => setOpenModal(false)}
+/>
         </div>
         <div className="table-wrap">
           <table>

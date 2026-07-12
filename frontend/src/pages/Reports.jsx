@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2, FileText, FileType } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2, FileText, FileType, Sheet } from 'lucide-react';
+import { exportToCSV, REPORT_UTILIZATION_COLUMNS, REPORT_FUEL_COLUMNS, REPORT_ROI_COLUMNS, REPORT_COST_COLUMNS } from '../utils/csvExport';
 import {
   AreaChart, Area,
   BarChart, Bar,

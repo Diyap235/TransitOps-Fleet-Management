@@ -1,104 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { Truck, Plus, Pencil, Trash2, Search, X, AlertCircle, MoreHorizontal } from 'lucide-react';
-import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from '../api/vehicles.api';
-import { useToast } from '../context/ToastContext';
+import React, { useState } from 'react';
+import { Truck, Plus, Pencil, Trash2, Search, X, AlertCircle } from 'lucide-react';
+import { vehicles as dummyVehicles } from '../data/dummyData';
+import { createVehicle, updateVehicle, deleteVehicle } from '../api/vehicles.api';
 
-// ── Semantic status config ────────────────────────────────────────
-const STATUS_CFG = {
-  'Available':  { cls: 'badge-teal',   dot: 'var(--dc-teal)',   label: 'Active'      },
-  'On Trip':    { cls: 'badge-blue',   dot: 'var(--dc-blue)',   label: 'En Route', pulse: true },
-  'In Shop':    { cls: 'badge-amber',  dot: 'var(--dc-amber)',  label: 'Maintenance' },
-  'Retired':    { cls: 'badge-gray',                            label: 'Retired'     },
+const STATUS_BADGE = {
+  'Available':   'badge-green',
+  'On Trip':     'badge-blue',
+  'Maintenance': 'badge-orange',
+  'In Shop':     'badge-orange',
+  'Retired':     'badge-gray',
 };
 
-// ── Fuel bar ──────────────────────────────────────────────────────
-const FuelBar = ({ level = 75 }) => {
-  const pct   = Math.max(0, Math.min(100, level));
-  const color = pct > 50 ? 'var(--dc-teal)' : pct > 20 ? 'var(--dc-amber)' : 'var(--dc-red)';
-  return (
-    <div className="fuel-bar-wrap">
-      <div className="fuel-bar-track">
-        <div className="fuel-bar-fill" style={{ width: `${pct}%`, background: color }} />
-      </div>
-      <span className="fuel-bar-label">{pct}%</span>
-    </div>
-  );
-};
+const EMPTY_FORM = { registrationNumber: '', name: '', type: '', maxLoadCapacity: '', odometer: '', acquisitionCost: '', status: 'Available' };
 
-// ── Driver avatar chip ────────────────────────────────────────────
-const DriverChip = ({ driver }) => {
-  if (!driver?.name) return <span className="driver-chip-unassigned">Unassigned</span>;
-  const initials = driver.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  return (
-    <span className="driver-chip">
-      <span className="driver-chip-avatar">{initials}</span>
-      <span className="driver-chip-name">{driver.name}</span>
-    </span>
-  );
-};
-
-// ── Status badge (semantic) ────────────────────────────────────────
-const StatusBadge = ({ status }) => {
-  const cfg  = STATUS_CFG[status] ?? { cls: 'badge-gray', label: status };
-  return (
-    <span className={`badge ${cfg.cls}`} style={{ gap: 6 }}>
-      {cfg.dot && (
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%',
-          background: cfg.dot, flexShrink: 0,
-          animation: cfg.pulse ? 'live-pulse 1.6s ease-in-out infinite' : undefined,
-          display: 'inline-block',
-        }} />
-      )}
-      {cfg.label ?? status}
-    </span>
-  );
-};
-
-// ── Filter chips ──────────────────────────────────────────────────
-const FILTERS = ['All', 'Available', 'On Trip', 'In Shop', 'Retired'];
-
-const EMPTY_FORM = {
-  registrationNumber: '', name: '', type: '',
-  maxLoadCapacity: '', odometer: '', acquisitionCost: '', status: 'Available',
-};
-
-// ── Modal ─────────────────────────────────────────────────────────
 const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
-    <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--border)' }}>
-        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "'Space Grotesk',sans-serif" }}>{title}</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-500)' }}><X size={18} /></button>
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
+    <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 24px 64px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #E5E7EB', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>{title}</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}><X size={18} /></button>
       </div>
       <form onSubmit={onSubmit} style={{ padding: 24 }}>
-        {error && <div className="alert alert-error"><AlertCircle size={14} />{error}</div>}
+        {error && <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEE2E2', color: '#B91C1C', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}><AlertCircle size={14} style={{ flexShrink: 0 }} />{error}</div>}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {[
             { key: 'registrationNumber', label: 'Registration Number', placeholder: 'e.g. MH12AB1234' },
-            { key: 'name',               label: 'Vehicle Name',        placeholder: 'e.g. Tata Prima 4928' },
-            { key: 'type',               label: 'Type',                placeholder: 'e.g. Heavy Truck' },
-            { key: 'maxLoadCapacity',    label: 'Max Load (kg)',        placeholder: '10000', type: 'number' },
-            { key: 'odometer',           label: 'Odometer (km)',        placeholder: '0',     type: 'number' },
-            { key: 'acquisitionCost',    label: 'Acquisition Cost',     placeholder: '500000',type: 'number' },
+            { key: 'name',               label: 'Vehicle Model',        placeholder: 'e.g. Tata Prima 4928' },
+            { key: 'type',               label: 'Type',                 placeholder: 'e.g. Heavy Truck' },
+            { key: 'maxLoadCapacity',    label: 'Max Load (kg)',         placeholder: '10000', type: 'number' },
+            { key: 'odometer',           label: 'Odometer (km)',         placeholder: '0',     type: 'number' },
+            { key: 'acquisitionCost',    label: 'Acquisition Cost (₹)', placeholder: '500000', type: 'number' },
           ].map(({ key, label, placeholder, type }) => (
-            <div className="form-group" style={{ marginBottom: 0 }} key={key}>
-              <label className="form-label">{label}</label>
-              <input className="form-control" type={type || 'text'} placeholder={placeholder}
-                value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} required />
+            <div key={key}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>{label}</label>
+              <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+                type={type || 'text'} placeholder={placeholder} value={form[key]}
+                onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} required />
             </div>
           ))}
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Status</label>
-            <select className="form-control" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>Status</label>
+            <select style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff' }}
+              value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
               {['Available', 'On Trip', 'In Shop', 'Retired'].map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading && <span className="spinner" />}{loading ? 'Saving…' : 'Save Vehicle'}
+          <button type="button" onClick={onClose} style={{ height: 36, padding: '0 16px', border: '1px solid #E5E7EB', borderRadius: 7, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+          <button type="submit" disabled={loading} style={{ height: 36, padding: '0 16px', border: 'none', borderRadius: 7, background: '#2563EB', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+            {loading && <span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} />}
+            {loading ? 'Saving…' : 'Save Vehicle'}
           </button>
         </div>
       </form>
@@ -106,26 +58,18 @@ const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
   </div>
 );
 
-// ── Page ──────────────────────────────────────────────────────────
 const Vehicles = () => {
-  const toast = useToast();
-  const [vehicles,   setVehicles]   = useState([]);
-  const [search,     setSearch]     = useState('');
-  const [filter,     setFilter]     = useState('All');
-  const [loading,    setLoading]    = useState(true);
-  const [modalOpen,  setModalOpen]  = useState(false);
-  const [editing,    setEditing]    = useState(null);
-  const [form,       setForm]       = useState(EMPTY_FORM);
-  const [saving,     setSaving]     = useState(false);
-  const [error,      setError]      = useState('');
+  const [vehicles, setVehicles] = useState(
+    dummyVehicles.map(v => ({ ...v, _id: v.id, name: v.model, type: v.model.split(' ')[0], maxLoadCapacity: 10000, acquisitionCost: 0 }))
+  );
+  const [search, setSearch]       = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing]     = useState(null);
+  const [form, setForm]           = useState(EMPTY_FORM);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
 
-  const load = () => {
-    setLoading(true);
-    getVehicles().then(res => setVehicles(res.data)).catch(() => {}).finally(() => setLoading(false));
-  };
-  useEffect(() => { load(); }, []);
-
-  const openAdd = () => { setEditing(null); setForm(EMPTY_FORM); setError(''); setModalOpen(true); };
+  const openAdd  = () => { setEditing(null); setForm(EMPTY_FORM); setError(''); setModalOpen(true); };
   const openEdit = (v) => {
     setEditing(v._id);
     setForm({ registrationNumber: v.registrationNumber, name: v.name, type: v.type, maxLoadCapacity: v.maxLoadCapacity, odometer: v.odometer, acquisitionCost: v.acquisitionCost, status: v.status });
@@ -137,142 +81,91 @@ const Vehicles = () => {
     try {
       if (editing) {
         await updateVehicle(editing, form);
-        toast.success('Vehicle updated', form.registrationNumber);
+        setVehicles(vs => vs.map(v => v._id === editing ? { ...v, ...form } : v));
       } else {
-        await createVehicle(form);
-        toast.success('Vehicle added', form.registrationNumber);
+        const res = await createVehicle(form);
+        setVehicles(vs => [{ ...res.data, _id: res.data._id }, ...vs]);
       }
-      setModalOpen(false); load();
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to save vehicle.';
-      setError(msg);
-      toast.error('Save failed', msg);
-    } finally { setSaving(false); }
+      setModalOpen(false);
+    } catch (err) { setError(err.response?.data?.message || 'Failed to save vehicle.'); }
+    finally { setSaving(false); }
   };
 
-  const handleDelete = async (v) => {
-    if (!window.confirm(`Delete ${v.registrationNumber}?`)) return;
-    try {
-      await deleteVehicle(v._id);
-      toast.warning('Vehicle removed', v.registrationNumber);
-      load();
-    } catch (err) {
-      toast.error('Delete failed', err.response?.data?.message || 'Could not delete vehicle.');
-    }
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this vehicle?')) return;
+    try { await deleteVehicle(id); setVehicles(vs => vs.filter(v => v._id !== id)); }
+    catch (err) { alert(err.response?.data?.message || 'Delete failed'); }
   };
 
-  // counts per status for chips
-  const counts = FILTERS.reduce((acc, f) => {
-    acc[f] = f === 'All' ? vehicles.length : vehicles.filter(v => v.status === f).length;
-    return acc;
-  }, {});
-
-  const filtered = vehicles.filter(v => {
-    const matchesFilter = filter === 'All' || v.status === filter;
-    const matchesSearch =
-      v.registrationNumber?.toLowerCase().includes(search.toLowerCase()) ||
-      v.name?.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const filtered = vehicles.filter(v =>
+    v.registrationNumber?.toLowerCase().includes(search.toLowerCase()) ||
+    v.name?.toLowerCase().includes(search.toLowerCase()) ||
+    v.driver?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    // --page-accent = blue (vehicles = core registry, stays brand blue)
-    <div style={{ '--page-accent': 'var(--dc-blue)', '--page-accent-bg': 'var(--dc-blue-bg)' }}>
-      {modalOpen && (
-        <Modal
-          title={editing ? 'Edit Vehicle' : 'Add Vehicle'}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleSubmit}
-          form={form} setForm={setForm}
-          loading={saving} error={error}
-        />
-      )}
+    <>
+      {modalOpen && <Modal title={editing ? 'Edit Vehicle' : 'Add Vehicle'} onClose={() => setModalOpen(false)} onSubmit={handleSubmit} form={form} setForm={setForm} loading={saving} error={error} />}
 
       <div className="page-header">
         <div className="page-header-left">
           <h1>Vehicles</h1>
-          <p>
-            {vehicles.length} total &nbsp;·&nbsp;
-            {vehicles.filter(v => v.status === 'Available').length} available &nbsp;·&nbsp;
-            {vehicles.filter(v => v.status === 'On Trip').length} on trip
-          </p>
+          <p>Manage your fleet of {vehicles.length} vehicles.</p>
         </div>
-        <button className="btn btn-primary" onClick={openAdd}>
-          <Plus size={15} strokeWidth={2.5} />Add Vehicle
-        </button>
+        <button className="btn btn-primary" onClick={openAdd}><Plus size={15} strokeWidth={2.5} />Add Vehicle</button>
       </div>
 
       <div className="card">
-        {/* ── Filter chips + search row ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div className="filter-chips" style={{ padding: 0, border: 'none', gap: 6 }}>
-            {FILTERS.map(f => (
-              <button
-                key={f}
-                className={`chip${filter === f ? ' active' : ''}`}
-                onClick={() => setFilter(f)}
-              >
-                {f}
-                <span className="chip-count">({counts[f]})</span>
-              </button>
-            ))}
-          </div>
+        <div className="card-header">
+          <span className="card-title">All Vehicles ({filtered.length})</span>
           <div className="search-bar">
             <span className="search-bar-icon"><Search size={14} /></span>
-            <input type="text" placeholder="Search vehicles…" value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search by reg, model, driver…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
-
-        {/* ── Table ── */}
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Registration</th>
-                <th>Name / Type</th>
-                <th>Driver</th>
-                <th>Odometer</th>
-                <th>Fuel</th>
+                <th>Reg. Number</th>
+                <th>Model</th>
+                <th>Assigned Driver</th>
+                <th>Location</th>
+                <th>Odometer (km)</th>
+                <th>Fuel Level</th>
                 <th>Status</th>
-                <th></th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-                    Loading vehicles...
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7}>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={8}>
                   <div className="empty-state">
                     <div className="empty-state-icon"><Truck size={22} strokeWidth={1.5} /></div>
                     <h3>No vehicles found</h3>
-                    <p>Add your first vehicle to start managing your fleet.</p>
                     <button className="btn btn-primary" onClick={openAdd}><Plus size={14} />Add Vehicle</button>
                   </div>
                 </td></tr>
               ) : filtered.map(v => (
-                <tr key={v._id}>
-                  <td className="td-primary" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
-                    {v.registrationNumber}
-                  </td>
+                <tr key={v._id || v.id}>
+                  <td className="td-primary">{v.registrationNumber}</td>
+                  <td>{v.model || v.name}</td>
+                  <td style={{ color: '#4B5563' }}>{v.driver || '—'}</td>
+                  <td style={{ color: '#6B7280', fontSize: 12 }}>{v.location || '—'}</td>
+                  <td>{Number(v.odometer).toLocaleString()}</td>
                   <td>
-                    <div style={{ fontWeight: 600, color: 'var(--dc-text)', fontSize: 13 }}>{v.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.5px', textTransform: 'uppercase' }}>{v.type}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 60, height: 6, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ width: `${v.fuelLevel}%`, height: '100%', background: v.fuelLevel > 50 ? '#16A34A' : v.fuelLevel > 20 ? '#D97706' : '#DC2626', borderRadius: 99 }} />
+                      </div>
+                      <span style={{ fontSize: 12, color: '#6B7280' }}>{v.fuelLevel}%</span>
+                    </div>
                   </td>
-                  <td><DriverChip driver={v.driver} /></td>
-                  <td style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
-                    {Number(v.odometer).toLocaleString()} km
-                  </td>
-                  <td><FuelBar level={v.fuelLevel ?? 75} /></td>
-                  <td><StatusBadge status={v.status} /></td>
+                  <td><span className={`badge ${STATUS_BADGE[v.status] ?? 'badge-gray'}`}>{v.status}</span></td>
                   <td>
-                    <div className="row-actions" style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(v)} title="Edit"><Pencil size={13} /></button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(v)} title="Delete" style={{ color: 'var(--dc-red)' }}><Trash2 size={13} /></button>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit({ ...v, _id: v.id })} title="Edit"><Pencil size={13} /></button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(v._id || v.id)} title="Delete" style={{ color: '#DC2626' }}><Trash2 size={13} /></button>
                     </div>
                   </td>
                 </tr>
@@ -281,7 +174,7 @@ const Vehicles = () => {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

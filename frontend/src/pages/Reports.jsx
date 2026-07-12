@@ -201,6 +201,10 @@ const exportAsPdf = (reportRef) => {
 const Reports = () => {
   const [showFormatMenu, setShowFormatMenu] = useState(false);
   const reportRef = useRef(null);
+  const hasReportData = fleetUtilizationData.length > 0
+    || fuelEfficiencyData.length > 0
+    || vehicleRoiData.length > 0
+    || costTrendsData.length > 0;
 
   return (
     <>
@@ -308,6 +312,16 @@ const Reports = () => {
           </div>
         ))}
       </div>
+
+      {!hasReportData && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="empty-state">
+            <div className="empty-state-icon"><BarChart3 size={22} strokeWidth={1.5} /></div>
+            <h3>No reports available yet</h3>
+            <p>Generate fleet insights once your data is synced to see charts and trend metrics.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Charts – top row ── */}
       <div

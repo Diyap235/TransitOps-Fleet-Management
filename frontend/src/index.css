@@ -543,16 +543,20 @@ tbody tr:hover td { background: rgba(37, 99, 235, 0.04); }
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 3px 10px;
-  border-radius: 99px;
+  border-radius: 999px;
   font-size: 11px; font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   white-space: nowrap;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
-.badge-green  { background: var(--success-light); color: #15803D; }
-.badge-blue   { background: #DBEAFE; color: #1D4ED8; }
-.badge-orange { background: var(--warning-light); color: #B45309; }
-.badge-red    { background: var(--danger-light);  color: #B91C1C; }
+.badge:hover {
+  transform: translateY(-1px);
+}
+.badge-green  { background: var(--success-light); color: #15803D; box-shadow: 0 0 0 8px rgba(16,185,129,0.12); }
+.badge-blue   { background: #DBEAFE; color: #1D4ED8; box-shadow: 0 0 0 8px rgba(37,99,235,0.12); }
+.badge-orange { background: var(--warning-light); color: #B45309; box-shadow: 0 0 0 8px rgba(245,158,11,0.12); }
+.badge-red    { background: var(--danger-light);  color: #B91C1C; box-shadow: 0 0 0 8px rgba(248,113,113,0.12); }
 .badge-gray   { background: var(--gray-100); color: var(--gray-600); }
 .badge-purple { background: #EDE9FE; color: #6D28D9; }
 
@@ -661,7 +665,8 @@ tbody tr:hover td { background: rgba(37, 99, 235, 0.04); }
   color: var(--gray-900);
   background: rgba(255, 255, 255, 0.8);
   outline: none;
-  transition: all var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  appearance: none;
   -webkit-appearance: none;
   backdrop-filter: blur(4px);
 }

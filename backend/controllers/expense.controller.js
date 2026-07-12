@@ -1,28 +1,67 @@
-// Expense Controller — implement CRUD logic here
+const Expense = require('../models/Expense');
+const Vehicle = require('../models/Vehicle');
 
 const getAllExpenses = async (req, res) => {
-  // TODO: fetch all expenses, optionally filter by vehicle or type
-  res.status(501).json({ message: 'getAllExpenses — not yet implemented' });
+  try {
+    const { vehicle, type } = req.query;
+    const filter = {};
+    if (vehicle) filter.vehicle = vehicle;
+    if (type) filter.type = type;
+    const expenses = await Expense.find(filter)
+      .populate('vehicle', 'registrationNumber name')
+      .sort({ date: -1 });
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const getExpenseById = async (req, res) => {
-  // TODO: fetch single expense by id
-  res.status(501).json({ message: 'getExpenseById — not yet implemented' });
+  try {
+    const expense = await Expense.findById(req.params.id).populate('vehicle', 'registrationNumber name');
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
+    res.json(expense);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const createExpense = async (req, res) => {
-  // TODO: create new expense entry
-  res.status(501).json({ message: 'createExpense — not yet implemented' });
+  try {
+    const { vehicle, type, amount, date } = req.body;
+    if (!vehicle || !type || amount == null) {
+      return res.status(400).json({ message: 'vehicle, type and amount are required' });
+    }
+    const veh = await Vehicle.findById(vehicle);
+    if (!veh) return res.status(404).json({ message: 'Vehicle not found' });
+
+    const expense = await Expense.create({ vehicle, type, amount, date: date || Date.now() });
+    await expense.populate('vehicle', 'registrationNumber name');
+    res.status(201).json(expense);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const updateExpense = async (req, res) => {
-  // TODO: update expense entry
-  res.status(501).json({ message: 'updateExpense — not yet implemented' });
+  try {
+    const expense = await Expense.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+      .populate('vehicle', 'registrationNumber name');
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
+    res.json(expense);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const deleteExpense = async (req, res) => {
-  // TODO: remove expense entry
-  res.status(501).json({ message: 'deleteExpense — not yet implemented' });
+  try {
+    const expense = await Expense.findByIdAndDelete(req.params.id);
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
+    res.json({ message: 'Expense deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 module.exports = { getAllExpenses, getExpenseById, createExpense, updateExpense, deleteExpense };

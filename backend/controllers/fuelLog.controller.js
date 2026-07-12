@@ -1,28 +1,66 @@
-// FuelLog Controller — implement CRUD logic here
+const FuelLog = require('../models/FuelLog');
+const Vehicle = require('../models/Vehicle');
 
 const getAllFuelLogs = async (req, res) => {
-  // TODO: fetch all fuel logs, optionally filter by vehicle
-  res.status(501).json({ message: 'getAllFuelLogs — not yet implemented' });
+  try {
+    const { vehicle } = req.query;
+    const filter = {};
+    if (vehicle) filter.vehicle = vehicle;
+    const logs = await FuelLog.find(filter)
+      .populate('vehicle', 'registrationNumber name')
+      .sort({ date: -1 });
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const getFuelLogById = async (req, res) => {
-  // TODO: fetch single fuel log by id
-  res.status(501).json({ message: 'getFuelLogById — not yet implemented' });
+  try {
+    const log = await FuelLog.findById(req.params.id).populate('vehicle', 'registrationNumber name');
+    if (!log) return res.status(404).json({ message: 'Fuel log not found' });
+    res.json(log);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const createFuelLog = async (req, res) => {
-  // TODO: create new fuel log entry
-  res.status(501).json({ message: 'createFuelLog — not yet implemented' });
+  try {
+    const { vehicle, liters, cost, date } = req.body;
+    if (!vehicle || liters == null || cost == null) {
+      return res.status(400).json({ message: 'vehicle, liters and cost are required' });
+    }
+    const veh = await Vehicle.findById(vehicle);
+    if (!veh) return res.status(404).json({ message: 'Vehicle not found' });
+
+    const log = await FuelLog.create({ vehicle, liters, cost, date: date || Date.now() });
+    await log.populate('vehicle', 'registrationNumber name');
+    res.status(201).json(log);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const updateFuelLog = async (req, res) => {
-  // TODO: update fuel log entry
-  res.status(501).json({ message: 'updateFuelLog — not yet implemented' });
+  try {
+    const log = await FuelLog.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+      .populate('vehicle', 'registrationNumber name');
+    if (!log) return res.status(404).json({ message: 'Fuel log not found' });
+    res.json(log);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const deleteFuelLog = async (req, res) => {
-  // TODO: remove fuel log entry
-  res.status(501).json({ message: 'deleteFuelLog — not yet implemented' });
+  try {
+    const log = await FuelLog.findByIdAndDelete(req.params.id);
+    if (!log) return res.status(404).json({ message: 'Fuel log not found' });
+    res.json({ message: 'Fuel log deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 module.exports = { getAllFuelLogs, getFuelLogById, createFuelLog, updateFuelLog, deleteFuelLog };

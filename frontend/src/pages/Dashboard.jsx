@@ -44,7 +44,6 @@ const Dashboard = () => {
     { label: 'Available Vehicles',    caption: 'READY FOR DISPATCH', value: availableVehicles,               Icon: CheckCircle, accent: 'var(--dc-green)',  accentBg: 'var(--dc-green-bg)'  },
     { label: 'Vehicles in Maintenance', caption: 'SERVICE QUEUE',   value: vehiclesInMaintenance,           Icon: Wrench,      accent: 'var(--dc-orange)', accentBg: 'var(--dc-orange-bg)' },
     { label: 'Active Trips',          caption: 'ROUTE LOG',          value: dashboardStats.activeTrips,      Icon: Route,       accent: 'var(--dc-teal)',   accentBg: 'var(--dc-teal-bg)'   },
-    { label: 'Pending Trips',         caption: 'AWAITING DISPATCH',  value: pendingTrips,                    Icon: Clock,       accent: 'var(--dc-yellow)', accentBg: 'var(--dc-yellow-bg)' },
     { label: 'Drivers Available',     caption: 'CREW ROSTER',        value: dashboardStats.driversAvailable, Icon: UserRound,  accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
     { label: 'Open Maintenance',      caption: 'SERVICE DESK',       value: dashboardStats.openMaintenance,  Icon: TrendingUp,  accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
   ];

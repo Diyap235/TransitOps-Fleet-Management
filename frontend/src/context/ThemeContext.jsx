@@ -2,6 +2,18 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext(null);
 
+export const ThemeProvider = ({ children }) => {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('transitops_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+    localStorage.setItem('transitops_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 const STORAGE_KEY = 'transitops_theme';
 
 export const ThemeProvider = ({ children }) => {
@@ -28,6 +40,7 @@ export const ThemeProvider = ({ children }) => {
 
 export const useTheme = () => {
   const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
   if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
   return ctx;
 };

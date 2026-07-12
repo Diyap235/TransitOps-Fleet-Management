@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Truck, UserRound, Route,
@@ -31,6 +31,14 @@ const Layout = ({ children }) => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Live clock — ticks every second, cleaned up on unmount
+  const fmt = () => new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const [clock, setClock] = useState(fmt);
+  useEffect(() => {
+    const id = setInterval(() => setClock(fmt()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -101,6 +109,10 @@ const Layout = ({ children }) => {
             <span className="topbar-title">{pageTitle}</span>
           </div>
           <div className="topbar-right">
+            <div className="clock-pill">
+              <span className="clock-dot" />
+              {clock}
+            </div>
             <button
               className="topbar-icon-btn"
               onClick={toggleTheme}

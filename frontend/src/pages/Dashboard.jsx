@@ -1,39 +1,100 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, UserRound, Route, Wrench, BarChart3 } from 'lucide-react';
+import {
+  Truck, UserRound, Route, Wrench, BarChart3,
+  TrendingUp, TrendingDown, Activity,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getVehicles } from '../api/vehicles.api';
 import { getDrivers } from '../api/drivers.api';
 import { getTrips } from '../api/trips.api';
 import { getMaintenanceRecords } from '../api/maintenance.api';
 
-const COLOR_MAP = {
-  blue:   { icon: '#2563EB', bg: '#EFF6FF' },
-  green:  { icon: '#16A34A', bg: '#F0FDF4' },
-  orange: { icon: '#D97706', bg: '#FFFBEB' },
-  red:    { icon: '#DC2626', bg: '#FEF2F2' },
-  purple: { icon: '#7C3AED', bg: '#F5F3FF' },
-};
-
-const QUICK = [
-  { to: '/vehicles',    label: 'Vehicles',    Icon: Truck,     color: 'blue'   },
-  { to: '/drivers',     label: 'Drivers',     Icon: UserRound, color: 'purple' },
-  { to: '/trips',       label: 'Trips',       Icon: Route,     color: 'green'  },
-  { to: '/maintenance', label: 'Maintenance', Icon: Wrench,    color: 'orange' },
-  { to: '/reports',     label: 'Reports',     Icon: BarChart3, color: 'red'    },
+// ── Stat card config — accent colours map to DC tokens ──────────
+const STATS = [
+  {
+    label:     'Total Vehicles',
+    value:     '—',
+    icon:      Truck,
+    color:     'blue',
+    trend:     null,
+    accentVar: '--dc-blue',
+    bgVar:     '--dc-blue-bg',
+  },
+  {
+    label:     'Active Trips',
+    value:     '—',
+    icon:      Route,
+    color:     'teal',
+    trend:     null,
+    accentVar: '--dc-teal',
+    bgVar:     '--dc-teal-bg',
+  },
+  {
+    label:     'Drivers Available',
+    value:     '—',
+    icon:      UserRound,
+    color:     'violet',
+    trend:     null,
+    accentVar: '--dc-violet',
+    bgVar:     '--dc-violet-bg',
+  },
+  {
+    label:     'Open Maintenance',
+    value:     '—',
+    icon:      Wrench,
+    color:     'red',
+    trend:     null,
+    accentVar: '--dc-red',
+    bgVar:     '--dc-red-bg',
+  },
 ];
 
-const TRIP_STATUS_COLOR = {
-  Draft:      { bg: '#F1F5F9', color: '#475569' },
-  Dispatched: { bg: '#DBEAFE', color: '#1D4ED8' },
-  Completed:  { bg: '#DCFCE7', color: '#15803D' },
-  Cancelled:  { bg: '#FEE2E2', color: '#B91C1C' },
-};
+// ── Quick-action config — accent + mono subtitle ─────────────────
+const QUICK = [
+  {
+    to:       '/vehicles',
+    label:    'Vehicles',
+    sub:      'FLEET REGISTRY',
+    Icon:     Truck,
+    accent:   '--dc-blue',
+    accentBg: '--dc-blue-bg',
+  },
+  {
+    to:       '/drivers',
+    label:    'Drivers',
+    sub:      'CREW ROSTER',
+    Icon:     UserRound,
+    accent:   '--dc-violet',
+    accentBg: '--dc-violet-bg',
+  },
+  {
+    to:       '/trips',
+    label:    'Trips',
+    sub:      'ROUTE LOG',
+    Icon:     Route,
+    accent:   '--dc-teal',
+    accentBg: '--dc-teal-bg',
+  },
+  {
+    to:       '/maintenance',
+    label:    'Maintenance',
+    sub:      'SERVICE DESK',
+    Icon:     Wrench,
+    accent:   '--dc-red',
+    accentBg: '--dc-red-bg',
+  },
+  {
+    to:       '/reports',
+    label:    'Reports',
+    sub:      'ANALYTICS',
+    Icon:     BarChart3,
+    accent:   '--dc-reports',
+    accentBg: '--dc-reports-bg',
+  },
+];
 
-const MAINT_STATUS_COLOR = {
-  Active: { bg: '#FEF3C7', color: '#B45309' },
-  Closed: { bg: '#DCFCE7', color: '#15803D' },
-};
+// ─────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -42,33 +103,11 @@ const Dashboard = () => {
   const [recentMaint, setRecentMaint]         = useState([]);
   const [loading, setLoading]   = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      getVehicles(),
-      getDrivers(),
-      getTrips(),
-      getMaintenanceRecords(),
-    ]).then(([v, d, t, m]) => {
-      const vehicles     = v.data;
-      const drivers      = d.data;
-      const trips        = t.data;
-      const maintenance  = m.data;
-
-      setStats({
-        vehicles:    vehicles.length,
-        trips:       trips.filter(t => t.status === 'Dispatched').length,
-        drivers:     drivers.filter(d => d.status === 'Available').length,
-        maintenance: maintenance.filter(m => m.status === 'Active').length,
-      });
-
-      // 5 most recent of each
-      setRecentTrips(trips.slice(0, 5));
-      setRecentMaint(maintenance.slice(0, 5));
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  const hour     = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  // ── greeting logic unchanged ──────────────────────────────────
+  const now  = new Date();
+  const hour = now.getHours();
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   const STAT_CARDS = [
     { label: 'Total Vehicles',     value: stats.vehicles,    Icon: Truck,     color: 'blue'   },
@@ -79,6 +118,7 @@ const Dashboard = () => {
 
   return (
     <>
+      {/* ── Page header ── */}
       <div className="page-header">
         <div className="page-header-left">
           <h1>{greeting}, {user?.name?.split(' ')[0] ?? 'there'}</h1>
@@ -86,24 +126,49 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ── Stat cards ── */}
-      <div className="stats-grid">
-        {STAT_CARDS.map(({ label, value, Icon, color }) => {
-          const c = COLOR_MAP[color];
-          return (
-            <div className="stat-card" key={label}>
-              <div className="stat-card-header">
-                <div className="stat-card-icon" style={{ background: c.bg, color: c.icon }}>
-                  <Icon size={18} strokeWidth={2} />
-                </div>
+      {/* ── Stat cards + animated connector rail ── */}
+      <div className="dc-connector-wrap" style={{ marginBottom: 24 }}>
+
+        {/* SVG dashed rail — sits behind cards via z-index */}
+        <svg
+          className="dc-connector-svg"
+          viewBox="0 0 1000 24"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <line
+            className="dc-connector-line"
+            x1="0" y1="12" x2="1000" y2="12"
+          />
+        </svg>
+
+        {/* Cards */}
+        <div className="stats-grid">
+          {STATS.map(({ label, value, icon: Icon, accentVar, bgVar }) => (
+            <div
+              key={label}
+              className="dc-stat-card"
+              style={{ '--dc-accent': `var(${accentVar})`, '--dc-accent-bg': `var(${bgVar})` }}
+            >
+              {/* Glowing status dot */}
+              <div className="dc-stat-dot" />
+
+              {/* Tinted icon chip */}
+              <div className="dc-icon-chip">
+                <Icon size={18} strokeWidth={2} />
               </div>
-              <div className="stat-card-value">
-                {loading ? <span style={{ fontSize: 20, color: '#9CA3AF' }}>…</span> : value}
-              </div>
-              <div className="stat-card-label">{label}</div>
+
+              {/* Value */}
+              <div className="dc-stat-value">{value === '—' ? '— —' : value}</div>
+
+              {/* Label */}
+              <div className="dc-stat-label">{label}</div>
+
+              {/* Awaiting-sync caption */}
+              <div className="dc-stat-caption">Awaiting Sync</div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
       {/* ── Quick actions ── */}
@@ -113,118 +178,42 @@ const Dashboard = () => {
         </div>
         <div className="card-body">
           <div className="quick-action-grid">
-            {QUICK.map(({ to, label, Icon, color }) => {
-              const c = COLOR_MAP[color];
-              return (
-                <Link key={to} to={to} className="quick-action-card">
-                  <div className="quick-action-icon" style={{ background: c.bg, color: c.icon }}>
-                    <Icon size={17} strokeWidth={2} />
-                  </div>
-                  <span className="quick-action-label">{label}</span>
-                </Link>
-              );
-            })}
+            {QUICK.map(({ to, label, sub, Icon, accent, accentBg }) => (
+              <Link
+                key={to}
+                to={to}
+                className="dc-quick-card"
+                style={{
+                  '--dc-card-accent':    `var(${accent})`,
+                  '--dc-card-accent-bg': `var(${accentBg})`,
+                }}
+              >
+                <div className="dc-quick-icon">
+                  <Icon size={17} strokeWidth={2} />
+                </div>
+                <span className="dc-quick-label">{label}</span>
+                <span className="dc-quick-sub">{sub}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── Recent activity: two columns ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-
-        {/* Recent Trips */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Recent Trips</span>
-            <Link to="/trips" style={{ fontSize: 12, color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>View all</Link>
-          </div>
-          {loading ? (
-            <div style={{ padding: 32, textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Loading…</div>
-          ) : recentTrips.length === 0 ? (
-            <div className="empty-state" style={{ padding: 32 }}>
-              <div className="empty-state-icon"><Route size={20} strokeWidth={1.5} /></div>
-              <h3>No trips yet</h3>
-              <p>Create your first trip to see activity here.</p>
-            </div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Route</th>
-                    <th>Driver</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentTrips.map(t => {
-                    const sc = TRIP_STATUS_COLOR[t.status] ?? { bg: '#F1F5F9', color: '#475569' };
-                    return (
-                      <tr key={t._id}>
-                        <td className="td-primary" style={{ fontSize: 12 }}>
-                          {t.source} → {t.destination}
-                        </td>
-                        <td style={{ fontSize: 12, color: '#6B7280' }}>{t.driver?.name ?? '—'}</td>
-                        <td>
-                          <span style={{ background: sc.bg, color: sc.color, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
-                            {t.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {/* ── Recent Activity — radar-sweep empty state ── */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Recent Activity</span>
         </div>
-
-        {/* Recent Maintenance */}
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Recent Maintenance</span>
-            <Link to="/maintenance" style={{ fontSize: 12, color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>View all</Link>
+        <div className="dc-radar-wrap">
+          {/* Rotating radar ring with centered icon */}
+          <div className="dc-radar-ring">
+            <Activity size={20} strokeWidth={1.5} />
           </div>
-          {loading ? (
-            <div style={{ padding: 32, textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Loading…</div>
-          ) : recentMaint.length === 0 ? (
-            <div className="empty-state" style={{ padding: 32 }}>
-              <div className="empty-state-icon"><Wrench size={20} strokeWidth={1.5} /></div>
-              <h3>No maintenance records</h3>
-              <p>Log your first maintenance event to see it here.</p>
-            </div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Vehicle</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentMaint.map(r => {
-                    const sc = MAINT_STATUS_COLOR[r.status] ?? { bg: '#F1F5F9', color: '#475569' };
-                    return (
-                      <tr key={r._id}>
-                        <td className="td-primary" style={{ fontSize: 12 }}>
-                          {r.vehicle?.registrationNumber ?? '—'}
-                        </td>
-                        <td style={{ fontSize: 12, color: '#6B7280', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {r.description}
-                        </td>
-                        <td>
-                          <span style={{ background: sc.bg, color: sc.color, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
-                            {r.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <h3>No activity yet</h3>
+          <p>
+            Recent trips, maintenance events, and alerts will appear here
+            the moment your fleet starts reporting in.
+          </p>
         </div>
 
       </div>

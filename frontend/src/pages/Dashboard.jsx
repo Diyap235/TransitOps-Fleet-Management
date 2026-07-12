@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, UserRound, Route, Wrench, BarChart3, Activity, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Truck, UserRound, Route, Wrench, BarChart3, Activity, CheckCircle, TrendingUp, Filter, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { dashboardStats, trips, maintenanceRecords, vehicles } from '../data/dummyData';
 
@@ -33,10 +33,14 @@ const Dashboard = () => {
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
+  // Filter states
+  const [vehicleType, setVehicleType] = useState('All');
+  const [status, setStatus] = useState('All');
+  const [region, setRegion] = useState('All');
+
   // Compute KPIs from actual data
   const availableVehicles = vehicles.filter(v => v.status === 'Available').length;
   const vehiclesInMaintenance = vehicles.filter(v => v.status === 'In Shop' || v.status === 'Maintenance').length;
-  const pendingTrips = trips.filter(t => t.status === 'Draft').length;
 
   // Extended STAT_CARDS with missing KPIs
   const COMPUTED_STAT_CARDS = [
@@ -48,6 +52,20 @@ const Dashboard = () => {
     { label: 'Open Maintenance',      caption: 'SERVICE DESK',       value: dashboardStats.openMaintenance,  Icon: TrendingUp,  accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
   ];
 
+  // Get unique vehicle types and regions from data
+  const vehicleTypes = ['All', ...new Set(vehicles.map(v => v.model?.split(' ')[0] || 'Other'))];
+  const regions = ['All', ...new Set(vehicles.map(v => v.location?.split(',')[1]?.trim() || 'Other'))];
+  const statuses = ['All', 'Dispatched', 'Completed', 'Cancelled'];
+
+  // Filter trips and maintenance records
+  const filteredTrips = trips.filter(t => {
+    let matches = true;
+    if (status !== 'All' && t.status !== status) matches = false;
+    return matches;
+  }).slice(0, 5);
+
+  const filteredMaint = maintenanceRecords.slice(0, 5);
+
   return (
     <>
       {/* ── Header ── */}
@@ -57,6 +75,36 @@ const Dashboard = () => {
           <p>Here is what is happening with your fleet today.</p>
         </div>
         <span className="live-badge"><span className="live-badge-dot" />LIVE</span>
+      </div>
+
+      {/* ── Filter Controls ── */}
+      <div className="card" style={{ marginBottom: 20, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(30, 41, 59, 0.8)' }}>
+        <div className="card-body" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', padding: '12px 16px' }}>
+          <Filter size={16} strokeWidth={2} style={{ color: 'var(--dc-text-faint)' }} />
+          <label style={{ fontSize: 12, color: 'var(--dc-text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Filters:</label>
+          
+          <select value={vehicleType} onChange={e => setVehicleType(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--dc-bg)', border: '1px solid var(--dc-line)', borderRadius: 6, color: 'var(--dc-text)', cursor: 'pointer' }}>
+            {vehicleTypes.map(t => <option key={t}>{t}</option>)}
+          </select>
+
+          <select value={status} onChange={e => setStatus(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--dc-bg)', border: '1px solid var(--dc-line)', borderRadius: 6, color: 'var(--dc-text)', cursor: 'pointer' }}>
+            {statuses.map(s => <option key={s}>{s}</option>)}
+          </select>
+
+          <select value={region} onChange={e => setRegion(e.target.value)}
+            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--dc-bg)', border: '1px solid var(--dc-line)', borderRadius: 6, color: 'var(--dc-text)', cursor: 'pointer' }}>
+            {regions.map(r => <option key={r}>{r}</option>)}
+          </select>
+
+          {(vehicleType !== 'All' || status !== 'All' || region !== 'All') && (
+            <button onClick={() => { setVehicleType('All'); setStatus('All'); setRegion('All'); }}
+              style={{ marginLeft: 'auto', padding: '6px 10px', fontSize: 11, background: 'transparent', border: '1px solid var(--dc-red)', borderRadius: 6, color: 'var(--dc-red)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <X size={13} />Clear Filters
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── DC Stat cards with animated connector rail ── */}
@@ -119,15 +167,15 @@ const Dashboard = () => {
               VIEW ALL →
             </Link>
           </div>
-          {recentTrips.length === 0 ? (
+          {filteredTrips.length === 0 ? (
             <div className="dc-radar-wrap">
               <div className="dc-radar-ring"><Activity size={22} strokeWidth={1.5} /></div>
-              <h3>No activity yet</h3>
-              <p>Recent trips will appear here once dispatched.</p>
+              <h3>No trips found</h3>
+              <p>Adjust filters or dispatched trips will appear here.</p>
             </div>
           ) : (
             <div className="activity-feed">
-              {recentTrips.map(t => {
+              {filteredTrips.map(t => {
                 const sc = TRIP_STATUS_COLOR[t.status] ?? { bg: 'rgba(107,90,224,0.12)', color: '#9C8CFF' };
                 return (
                   <div className="activity-row" key={t.tripId}>
@@ -156,7 +204,7 @@ const Dashboard = () => {
               VIEW ALL →
             </Link>
           </div>
-          {recentMaint.length === 0 ? (
+          {filteredMaint.length === 0 ? (
             <div className="dc-radar-wrap">
               <div className="dc-radar-ring"><Wrench size={22} strokeWidth={1.5} /></div>
               <h3>All clear</h3>
@@ -164,7 +212,7 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="activity-feed">
-              {recentMaint.map(r => {
+              {filteredMaint.map(r => {
                 const pc = MAINT_PRIORITY_COLOR[r.priority] ?? { bg: 'rgba(107,90,224,0.12)', color: '#9C8CFF' };
                 return (
                   <div className="activity-row" key={r.id}>

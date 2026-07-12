@@ -80,6 +80,7 @@ const KPI_CARDS = [
     icon: Gauge,
     iconBg: '#EFF6FF',
     iconColor: '#2563EB',
+    chartId: 'fleet-utilization',
   },
   {
     label: 'Fuel Efficiency',
@@ -87,8 +88,9 @@ const KPI_CARDS = [
     trend: '+1.9%',
     up: true,
     icon: Fuel,
-    iconBg: '#F0FDF4',
-    iconColor: '#16A34A',
+    iconBg: '#EFF6FF',
+    iconColor: '#0EA5E9',
+    chartId: 'fuel-efficiency',
   },
   {
     label: 'Vehicle ROI',
@@ -98,6 +100,7 @@ const KPI_CARDS = [
     icon: BarChart2,
     iconBg: '#F5F3FF',
     iconColor: '#7C3AED',
+    chartId: 'vehicle-roi',
   },
   {
     label: 'Cost per KM',
@@ -105,8 +108,9 @@ const KPI_CARDS = [
     trend: '-2.3%',
     up: false,
     icon: DollarSign,
-    iconBg: '#FFF7ED',
-    iconColor: '#EA580C',
+    iconBg: '#EFF6FF',
+    iconColor: '#06B6D4',
+    chartId: 'cost-trends',
   },
 ];
 
@@ -162,8 +166,8 @@ const exportAsTxt = () => {
     ...vehicleRoiData.map(d => `${d.month.padEnd(8)}${d.roi}%`),
     '',
     '── COST TRENDS (Last 12 months) ─────────────────',
-    'Month   Cost/km($)',
-    ...costTrendsData.map(d => `${d.month.padEnd(8)}$${d.costPerKm}`),
+    'Month   Cost/km(₹)',
+    ...costTrendsData.map(d => `${d.month.padEnd(8)}₹${d.costPerKm}`),
     '',
     '================================================',
     '  TransitOps — Smart Transport Operations       ',
@@ -200,11 +204,21 @@ const exportAsPdf = (reportRef) => {
 
 const Reports = () => {
   const [showFormatMenu, setShowFormatMenu] = useState(false);
+  const [highlightedChart, setHighlightedChart] = useState(null);
   const reportRef = useRef(null);
   const hasReportData = fleetUtilizationData.length > 0
     || fuelEfficiencyData.length > 0
     || vehicleRoiData.length > 0
     || costTrendsData.length > 0;
+
+  const scrollToChart = (chartId) => {
+    setHighlightedChart(chartId);
+    const element = document.getElementById(chartId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setHighlightedChart(null), 3000);
+    }
+  };
 
   return (
     <>
@@ -282,8 +296,22 @@ const Reports = () => {
 
       {/* ── KPI Cards ── */}
       <div className="stats-grid" style={{ marginBottom: 28 }}>
-        {KPI_CARDS.map(({ label, value, trend, up, icon: Icon, iconBg, iconColor }) => (
-          <div className="stat-card" key={label}>
+        {KPI_CARDS.map(({ label, value, trend, up, icon: Icon, iconBg, iconColor, chartId }) => (
+          <div className="stat-card" key={label} onClick={() => scrollToChart(chartId)}
+            style={{
+              cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              outline: highlightedChart === chartId ? '2px solid #2563EB' : 'none',
+              outlineOffset: 4,
+              boxShadow: highlightedChart === chartId ? '0 0 20px rgba(37, 99, 235, 0.4)' : 'none',
+              transform: highlightedChart === chartId ? 'scale(1.02)' : 'scale(1)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = highlightedChart === chartId ? 'scale(1.02)' : 'scale(1)';
+            }}>
             <div className="stat-card-header">
               <div
                 className="stat-card-icon"
@@ -333,7 +361,12 @@ const Reports = () => {
         }}
       >
         {/* Fleet Utilization – Area */}
-        <div className="card">
+        <div className="card" id="fleet-utilization" style={{
+          boxShadow: highlightedChart === 'fleet-utilization' ? '0 0 24px rgba(37, 99, 235, 0.4)' : 'none',
+          outline: highlightedChart === 'fleet-utilization' ? '2px solid #2563EB' : 'none',
+          outlineOffset: 2,
+          transition: 'all 0.3s',
+        }}>
           <div className="card-header">
             <span className="card-title">Fleet Utilization</span>
             <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (%)</span>
@@ -367,7 +400,12 @@ const Reports = () => {
         </div>
 
         {/* Fuel Efficiency – Bar */}
-        <div className="card">
+        <div className="card" id="fuel-efficiency" style={{
+          boxShadow: highlightedChart === 'fuel-efficiency' ? '0 0 24px rgba(6, 182, 212, 0.4)' : 'none',
+          outline: highlightedChart === 'fuel-efficiency' ? '2px solid #06B6D4' : 'none',
+          outlineOffset: 2,
+          transition: 'all 0.3s',
+        }}>
           <div className="card-header">
             <span className="card-title">Fuel Efficiency</span>
             <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (km/L)</span>
@@ -382,7 +420,7 @@ const Reports = () => {
                 <Bar
                   dataKey="efficiency"
                   name="Efficiency"
-                  fill="#16A34A"
+                  fill="#06B6D4"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -400,7 +438,12 @@ const Reports = () => {
         }}
       >
         {/* Vehicle ROI – Line */}
-        <div className="card">
+        <div className="card" id="vehicle-roi" style={{
+          boxShadow: highlightedChart === 'vehicle-roi' ? '0 0 24px rgba(124, 58, 237, 0.4)' : 'none',
+          outline: highlightedChart === 'vehicle-roi' ? '2px solid #7C3AED' : 'none',
+          outlineOffset: 2,
+          transition: 'all 0.3s',
+        }}>
           <div className="card-header">
             <span className="card-title">Vehicle ROI</span>
             <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (%)</span>
@@ -427,10 +470,15 @@ const Reports = () => {
         </div>
 
         {/* Cost Trends – Line */}
-        <div className="card">
+        <div className="card" id="cost-trends" style={{
+          boxShadow: highlightedChart === 'cost-trends' ? '0 0 24px rgba(6, 182, 212, 0.4)' : 'none',
+          outline: highlightedChart === 'cost-trends' ? '2px solid #06B6D4' : 'none',
+          outlineOffset: 2,
+          transition: 'all 0.3s',
+        }}>
           <div className="card-header">
             <span className="card-title">Cost Trends</span>
-            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months ($/km)</span>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (₹/km)</span>
           </div>
           <div className="card-body" style={{ padding: '16px 8px 8px' }}>
             <ResponsiveContainer width="100%" height={220}>
@@ -438,15 +486,15 @@ const Reports = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0.38, 0.55]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip unit=" $/km" />} />
+                <Tooltip content={<ChartTooltip unit=" ₹/km" />} />
                 <Line
                   type="monotone"
                   dataKey="costPerKm"
                   name="Cost/km"
-                  stroke="#EA580C"
+                  stroke="#06B6D4"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#EA580C', strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: '#EA580C', strokeWidth: 0 }}
+                  dot={{ r: 3, fill: '#06B6D4', strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: '#06B6D4', strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>

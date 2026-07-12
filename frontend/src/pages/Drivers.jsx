@@ -9,14 +9,69 @@ const EMPTY = { name:'', licenseNumber:'', licenseCategory:'', licenseExpiryDate
 
 const Stars = ({ rating }) => {
   const r = Number(rating) || 0;
+  // Determine ring color based on rating
+  let ringColor = '#22C55E'; // green for 4.5+
+  if (r < 4.5 && r >= 3.5) ringColor = '#EAB308'; // yellow for 3.5-4.4
+  if (r < 3.5) ringColor = '#EF4444'; // red for below 3.5
+  
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:1 }}>
-      {[1,2,3,4,5].map(i => (
-        <span key={i} style={{ color: i <= Math.round(r) ? '#F5A623' : 'var(--dc-line)', fontSize:13 }}>★</span>
-      ))}
-      <span style={{ fontSize:11, color:'var(--dc-text-faint)', marginLeft:4, fontFamily:'monospace' }}>{r.toFixed(1)}</span>
+    <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+      {/* Circular Progress Ring */}
+      <svg width="32" height="32" viewBox="0 0 32 32" style={{ flexShrink: 0 }}>
+        {/* Background circle */}
+        <circle cx="16" cy="16" r="14" fill="none" stroke="var(--dc-line)" strokeWidth="2" />
+        {/* Progress ring */}
+        <circle 
+          cx="16" 
+          cy="16" 
+          r="14" 
+          fill="none" 
+          stroke={ringColor} 
+          strokeWidth="2"
+          strokeDasharray={`${(r / 5) * 88} 88`}
+          strokeLinecap="round"
+          style={{ transform: 'rotate(-90deg)', transformOrigin: '16px 16px', transition: 'stroke-dasharray 0.3s ease' }}
+        />
+        {/* Rating value in center */}
+        <text x="16" y="18" textAnchor="middle" fontSize="12" fontWeight="600" fill={ringColor} fontFamily="'JetBrains Mono', monospace">
+          {r.toFixed(1)}
+        </text>
+      </svg>
     </span>
   );
+};
+
+const LicenseExpiryBadge = ({ expiryDate }) => {
+  if (!expiryDate) return <span>—</span>;
+  
+  const today = new Date();
+  const expiry = new Date(expiryDate);
+  const daysUntilExpiry = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
+  
+  const formattedDate = expiry.toLocaleDateString();
+  
+  // Already expired
+  if (daysUntilExpiry < 0) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: 'monospace' }}>{formattedDate}</span>
+        <span style={{ fontSize: 9, fontWeight: 600, background: '#FEE2E2', color: '#DC2626', padding: '2px 6px', borderRadius: 4, letterSpacing: '0.3px' }}>EXPIRED</span>
+      </div>
+    );
+  }
+  
+  // Expiring within 30 days
+  if (daysUntilExpiry <= 30) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: 'monospace' }}>{formattedDate}</span>
+        <span style={{ fontSize: 9, fontWeight: 600, background: 'rgba(245, 166, 35, 0.15)', color: '#F5A623', padding: '2px 6px', borderRadius: 4, letterSpacing: '0.3px' }}>EXPIRING</span>
+      </div>
+    );
+  }
+  
+  // Not expiring soon
+  return <span style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: 'monospace' }}>{formattedDate}</span>;
 };
 
 const DriverModal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
@@ -136,7 +191,7 @@ const Drivers = () => {
                   <td><span className="td-primary">{d.name}</span></td>
                   <td style={{ fontFamily:'monospace', fontSize:11, color:'var(--dc-text-dim)' }}>{d.licenseNumber}</td>
                   <td style={{ fontSize:12, color:'var(--dc-text-dim)' }}>{d.licenseCategory||'—'}</td>
-                  <td style={{ fontSize:11, color:'var(--dc-text-faint)', fontFamily:'monospace' }}>{d.licenseExpiryDate ? new Date(d.licenseExpiryDate).toLocaleDateString() : '—'}</td>
+                  <td><LicenseExpiryBadge expiryDate={d.licenseExpiryDate} /></td>
                   <td style={{ fontSize:12, color:'var(--dc-text-faint)' }}>{d.phone||d.contactNumber||'—'}</td>
                   <td style={{ fontSize:12 }}>{d.experience ? `${d.experience} yrs` : '—'}</td>
                   <td><Stars rating={d.rating||(d.safetyScore/20)||4} /></td>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, User, Eye, EyeOff, Truck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { loginUser, registerUser } from '../api/auth.api';
 
@@ -7,290 +8,60 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState('signin'); // 'signin' | 'register'
-  const [showPassword, setShowPassword] = useState(false);
 
-  // Sign-in fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  // Register fields
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const [form, setForm] = useState({
+    name: '', email: '', password: '', confirm: '',
+  });
+
+  const set = (field) => (e) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    setError('');
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (tab === 'register' && form.password !== form.confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (tab === 'register' && form.password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await loginUser({ email, password });
+      const res = tab === 'login'
+        ? await loginUser({ email: form.email, password: form.password })
+        : await registerUser({ name: form.name, email: form.email, password: form.password });
+
       login(res.data.user, res.data.token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Check your credentials.');
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const res = await registerUser({ name: regName, email: regEmail, password: regPassword });
-      login(res.data.user, res.data.token);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  return (
-    <div style={styles.page}>
-      {/* ── Left panel ── */}
-      <div style={styles.left}>
-        <div style={styles.brand}>
-          <div style={styles.brandIcon}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="1" y="3" width="15" height="13" rx="2" />
-              <path d="M16 8h4l3 5v3h-7V8z" />
-              <circle cx="5.5" cy="18.5" r="2.5" />
-              <circle cx="18.5" cy="18.5" r="2.5" />
-            </svg>
-          </div>
-          <span style={styles.brandText}><span style={styles.brandBold}>Transit</span><span style={styles.brandAccent}>Ops</span></span>
-        </div>
-
-        <div style={styles.hero}>
-          <h2 style={styles.heroTitle}>
-            Manage your fleet<br />
-            <span style={styles.heroAccent}>smarter, faster.</span>
-          </h2>
-          <p style={styles.heroSub}>
             A unified operations platform for real-time vehicle tracking,
             driver management, trip dispatch, and financial reporting.
           </p>
 
-          <ul style={styles.featureList}>
+
             {[
               'Real-time vehicle tracking',
               'Driver safety scoring',
               'Automated maintenance alerts',
               'Financial analytics & reporting',
             ].map((f) => (
-              <li key={f} style={styles.featureItem}>
-                <span style={styles.featureDot} />
-                {f}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
 
-      {/* ── Right panel ── */}
-      <div style={styles.right}>
-        <div style={styles.formBox}>
-          <h2 style={styles.welcomeTitle}>Welcome back</h2>
-          <p style={styles.welcomeSub}>Sign in to your TransitOps workspace</p>
-
-          {/* Tabs */}
-          <div style={styles.tabs}>
-            <button
-              style={{ ...styles.tab, ...(tab === 'signin' ? styles.tabActive : {}) }}
-              onClick={() => { setTab('signin'); setError(''); }}
-            >
-              Sign In
-            </button>
-            <button
-              style={{ ...styles.tab, ...(tab === 'register' ? styles.tabActive : {}) }}
-              onClick={() => { setTab('register'); setError(''); }}
-            >
-              Register
-            </button>
-          </div>
-
-          {error && <div style={styles.errorBox}>{error}</div>}
-
-          {/* Sign In Form */}
-          {tab === 'signin' && (
-            <form onSubmit={handleSignIn}>
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Email Address <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                  </span>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoFocus
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Password <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    style={{ ...styles.input, paddingRight: 40 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                        <line x1="1" y1="1" x2="23" y2="23" />
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" style={styles.submitBtn} disabled={loading}>
-                {loading ? 'Signing in…' : 'Sign In'}
-              </button>
-
-              <p style={styles.switchText}>
-                Don't have an account?{' '}
-                <button type="button" style={styles.switchLink} onClick={() => { setTab('register'); setError(''); }}>
-                  Register here
-                </button>
-              </p>
-            </form>
-          )}
-
-          {/* Register Form */}
-          {tab === 'register' && (
-            <form onSubmit={handleRegister}>
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Full Name <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    required
-                    autoFocus
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Email Address <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                  </span>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    required
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>
-                  Password <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <div style={styles.inputWrap}>
-                  <span style={styles.inputIcon}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    style={{ ...styles.input, paddingRight: 40 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
-                    tabIndex={-1}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" style={styles.submitBtn} disabled={loading}>
-                {loading ? 'Creating account…' : 'Create Account'}
-              </button>
-
-              <p style={styles.switchText}>
-                Already have an account?{' '}
-                <button type="button" style={styles.switchLink} onClick={() => { setTab('signin'); setError(''); }}>
-                  Sign in here
-                </button>
-              </p>
-            </form>
-          )}
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/login" element={<Login />} />
+    <Route path="/login"       element={<Login />} />
     <Route path="/"            element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/vehicles"    element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
     <Route path="/drivers"     element={<ProtectedRoute><Drivers /></ProtectedRoute>} />
@@ -34,13 +34,13 @@ const AppRoutes = () => (
 );
 
 const App = () => (
-  <ThemeProvider>
-    <BrowserRouter>
+  <BrowserRouter>
+    <ThemeProvider>
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-    </BrowserRouter>
-  </ThemeProvider>
+    </ThemeProvider>
+  </BrowserRouter>
 );
 
 export default App;

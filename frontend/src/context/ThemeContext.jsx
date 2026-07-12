@@ -6,18 +6,15 @@ const STORAGE_KEY = 'transitops_theme';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Restore persisted preference, fall back to light
     return localStorage.getItem(STORAGE_KEY) || 'light';
   });
 
   useEffect(() => {
-    // Apply data-theme to <html> so all CSS variables cascade globally
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
-  const toggleTheme = () =>
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

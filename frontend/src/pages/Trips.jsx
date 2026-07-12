@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Route, Plus, Pencil, Trash2, LayoutGrid, List, User, Truck, MapPin } from 'lucide-react';
+import { Route, Plus, Pencil, Trash2, LayoutGrid, List } from 'lucide-react';
 import { trips as dummyTrips } from '../data/dummyData';
 import { createTrip, updateTrip, deleteTrip } from '../api/trips.api';
 import { Modal, FormField, Input, ErrorBanner, ModalFooter, EmptyState, PageHeader, SearchBar } from '../components/UI';
@@ -178,7 +178,7 @@ const Trips = () => {
                   'Cancelled': { bg: 'rgba(239, 68, 68, 0.1)', border: '#EF4444', label: '#EF4444' }
                 };
                 const colors = statusColors[status];
-                
+
                 return (
                   <div key={status} style={{
                     background: colors.bg,
@@ -219,10 +219,10 @@ const Trips = () => {
                           }}>
                             <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--dc-text-faint)' }}>{t.tripId||t._id}</div>
                             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--dc-text)', marginTop: 4 }}>{t.source} → {t.destination}</div>
-                            <div style={{ fontSize: 11, color: 'var(--dc-text-dim)', marginTop: 6, lineHeight: 1.4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><User size={14} style={{ color: '#9CA3AF', flexShrink: 0 }} /> {t.driver}</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Truck size={14} style={{ color: '#9CA3AF', flexShrink: 0 }} /> {t.vehicle}</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} style={{ color: '#9CA3AF', flexShrink: 0 }} /> {t.distance||t.plannedDistance} km</div>
+                            <div style={{ fontSize: 11, color: 'var(--dc-text-dim)', marginTop: 6, lineHeight: 1.4 }}>
+                              <div>👤 {t.driver}</div>
+                              <div>🚚 {t.vehicle}</div>
+                              <div>📍 {t.distance||t.plannedDistance} km</div>
                             </div>
                             <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
                               {t.status==='Draft' && <button className="btn btn-ghost btn-xs" onClick={() => changeStatus(t._id,'Dispatched')} style={{ flex: 1, fontSize: 10 }}>Dispatch</button>}

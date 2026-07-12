@@ -13,7 +13,7 @@ const Stars = ({ rating }) => {
   let ringColor = '#22C55E'; // green for 4.5+
   if (r < 4.5 && r >= 3.5) ringColor = '#EAB308'; // yellow for 3.5-4.4
   if (r < 3.5) ringColor = '#EF4444'; // red for below 3.5
-  
+
   return (
     <span style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
       {/* Circular Progress Ring */}
@@ -21,12 +21,12 @@ const Stars = ({ rating }) => {
         {/* Background circle */}
         <circle cx="16" cy="16" r="14" fill="none" stroke="var(--dc-line)" strokeWidth="2" />
         {/* Progress ring */}
-        <circle 
-          cx="16" 
-          cy="16" 
-          r="14" 
-          fill="none" 
-          stroke={ringColor} 
+        <circle
+          cx="16"
+          cy="16"
+          r="14"
+          fill="none"
+          stroke={ringColor}
           strokeWidth="2"
           strokeDasharray={`${(r / 5) * 88} 88`}
           strokeLinecap="round"
@@ -43,13 +43,13 @@ const Stars = ({ rating }) => {
 
 const LicenseExpiryBadge = ({ expiryDate }) => {
   if (!expiryDate) return <span>—</span>;
-  
+
   const today = new Date();
   const expiry = new Date(expiryDate);
   const daysUntilExpiry = Math.floor((expiry - today) / (1000 * 60 * 60 * 24));
-  
+
   const formattedDate = expiry.toLocaleDateString();
-  
+
   // Already expired
   if (daysUntilExpiry < 0) {
     return (
@@ -59,7 +59,7 @@ const LicenseExpiryBadge = ({ expiryDate }) => {
       </div>
     );
   }
-  
+
   // Expiring within 30 days
   if (daysUntilExpiry <= 30) {
     return (
@@ -69,7 +69,7 @@ const LicenseExpiryBadge = ({ expiryDate }) => {
       </div>
     );
   }
-  
+
   // Not expiring soon
   return <span style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: 'monospace' }}>{formattedDate}</span>;
 };
@@ -211,4 +211,5 @@ const Drivers = () => {
     </>
   );
 };
+
 export default Drivers;

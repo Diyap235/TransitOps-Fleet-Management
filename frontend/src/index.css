@@ -74,10 +74,30 @@ body::before {
   position: fixed;
   inset: 0;
   background:
+    radial-gradient(ellipse at 20% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 60% 100%, rgba(30, 58, 138, 0.1) 0%, transparent 50%);
+
     radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.06) 0%, transparent 50%);
   pointer-events: none;
   z-index: -1;
+  animation: aurora-drift 20s ease-in-out infinite;
+}
+
+@keyframes aurora-drift {
+  0%, 100% { 
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+      radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+      radial-gradient(ellipse at 60% 100%, rgba(30, 58, 138, 0.1) 0%, transparent 50%);
+  }
+  50% { 
+    background:
+      radial-gradient(ellipse at 30% 40%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
+      radial-gradient(ellipse at 70% 30%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 90%, rgba(30, 58, 138, 0.1) 0%, transparent 50%);
+  }
 }
 
 /* ─── Pulse animation for live indicator ─────── */
@@ -631,12 +651,72 @@ tbody tr:hover td { background: rgba(37, 99, 235, 0.04); }
 /* ─── Badge ──────────────────────────────────── */
 .badge {
   display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 12px;
+  border-radius: 99px;
+
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px; font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   white-space: nowrap;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.25s ease;
+}
+.badge:hover {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+.badge-green  { 
+  background: linear-gradient(135deg, #DCFCE7, #F0FDF4);
+  color: #15803D;
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.2);
+}
+.badge-green:hover { box-shadow: 0 0 20px rgba(22, 163, 74, 0.3); }
+.badge-blue   { 
+  background: linear-gradient(135deg, #DBEAFE, #E0F2FE);
+  color: #1D4ED8;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.2);
+}
+.badge-blue:hover { box-shadow: 0 0 20px rgba(37, 99, 235, 0.3); }
+.badge-orange { 
+  background: linear-gradient(135deg, #FFFBEB, #FEF3C7);
+  color: #B45309;
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.2);
+}
+.badge-orange:hover { box-shadow: 0 0 20px rgba(217, 119, 6, 0.3); }
+.badge-red    { 
+  background: linear-gradient(135deg, #FEE2E2, #FEF2F2);
+  color: #B91C1C;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.2);
+}
+.badge-red:hover { box-shadow: 0 0 20px rgba(220, 38, 38, 0.3); }
+.badge-gray   { 
+  background: linear-gradient(135deg, #F3F4F6, #E5E7EB);
+  color: var(--gray-600);
+}
+.badge-purple { 
+  background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
+  color: #6D28D9;
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.2);
+}
+.badge-purple:hover { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+
+/* ─── Skeleton Loader ────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.5) 25%,
+    rgba(226, 232, 240, 0.8) 50%,
+    rgba(226, 232, 240, 0.5) 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 4px;
+}
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .badge:hover {
@@ -1604,6 +1684,95 @@ select.form-control { cursor: pointer; }
   border-color: var(--dc-card-accent, var(--dc-blue));
   box-shadow: 0 12px 28px rgba(59, 130, 246, 0.18), 0 8px 16px rgba(0,0,0,0.12);
   background: rgba(15, 23, 42, 0.6);
+}
+.dc-quick-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--dc-card-accent-bg, var(--dc-blue-bg));
+  color: var(--dc-card-accent, var(--dc-blue));
+  flex-shrink: 0;
+}
+.dc-quick-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dc-text);
+  line-height: 1.2;
+}
+.dc-quick-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--dc-text-faint);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+/* ── Radar-sweep empty state ──────────────────────────────────── */
+.dc-radar-wrap { padding: 52px 24px; text-align: center; }
+.dc-radar-ring {
+  position: relative;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  border: 1.5px solid var(--dc-teal);
+  margin: 0 auto 18px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.dc-radar-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(47,212,168,0.0)  0%,
+    rgba(47,212,168,0.18) 25%,
+    rgba(47,212,168,0.0)  40%
+  );
+  animation: radar-spin 2.8s linear infinite;
+}
+@keyframes radar-spin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+.dc-radar-ring svg { position: relative; z-index: 1; color: var(--dc-teal); }
+.dc-radar-wrap h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; font-weight: 600;
+  color: var(--dc-text);
+  margin-bottom: 8px;
+}
+.dc-radar-wrap p {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--dc-text-dim);
+  max-width: 340px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px;
+  background: var(--dc-panel);
+  border: 1px solid var(--dc-line);
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition:
+    transform    0.2s ease,
+    border-color 0.2s ease,
+    box-shadow   0.2s ease,
+    background   0.2s ease;
+}
+.dc-quick-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--dc-card-accent, var(--dc-blue));
+  box-shadow: 0 6px 20px rgba(0,0,0,0.09);
 }
 .dc-quick-icon {
   width: 36px; height: 36px;

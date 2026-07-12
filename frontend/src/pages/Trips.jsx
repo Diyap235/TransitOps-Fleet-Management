@@ -84,7 +84,9 @@ const Trips = () => {
   };
 
   const handleStatusChange = (id, newStatus) => {
+    // Update UI immediately regardless of backend result
     setTrips(ts => ts.map(t => t._id === id ? { ...t, status: newStatus } : t));
+    // Fire backend call silently — dummy IDs will fail but UI is already updated
     updateTrip(id, { status: newStatus }).catch(() => {});
   };
 

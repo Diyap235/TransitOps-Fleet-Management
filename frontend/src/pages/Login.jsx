@@ -8,9 +8,7 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState('login');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,7 +21,7 @@ const Login = () => {
     setError('');
   };
 
-  const handleSubmit = async (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -51,209 +49,245 @@ const Login = () => {
     }
   };
 
-  const switchTab = (t) => {
-    setTab(t);
-    setError('');
-    setForm({ name: '', email: '', password: '', confirm: '' });
-  };
 
-  return (
-    <div className="auth-page">
-      {/* Left panel */}
-      <div className="auth-left">
-        <div className="auth-left-content">
-          <div className="auth-left-brand">
-            <div className="auth-brand-icon">
-              <Truck size={20} color="#fff" strokeWidth={2.5} />
-            </div>
-            <span className="auth-brand-name">
-              Transit<span>Ops</span>
-            </span>
-          </div>
-
-          <h1 className="auth-headline">
-            Manage your fleet<br />
-            <span>smarter, faster.</span>
-          </h1>
-          <p className="auth-subline">
             A unified operations platform for real-time vehicle tracking,
             driver management, trip dispatch, and financial reporting.
           </p>
 
-          <div className="auth-features">
+
             {[
               'Real-time vehicle tracking',
               'Driver safety scoring',
               'Automated maintenance alerts',
               'Financial analytics & reporting',
             ].map((f) => (
-              <div className="auth-feature" key={f}>
-                <div className="auth-feature-dot" />
-                <span>{f}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Right panel */}
-      <div className="auth-right">
-        <div className="auth-box">
-          <h2 className="auth-box-title">
-            {tab === 'login' ? 'Welcome back' : 'Create your account'}
-          </h2>
-          <p className="auth-box-subtitle">
-            {tab === 'login'
-              ? 'Sign in to your TransitOps workspace'
-              : 'Get started with TransitOps today'}
-          </p>
-
-          {/* Tabs */}
-          <div className="auth-tabs">
-            <button
-              className={`auth-tab${tab === 'login' ? ' active' : ''}`}
-              onClick={() => switchTab('login')}
-              type="button"
-            >
-              Sign In
-            </button>
-            <button
-              className={`auth-tab${tab === 'register' ? ' active' : ''}`}
-              onClick={() => switchTab('register')}
-              type="button"
-            >
-              Register
-            </button>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="alert alert-error">
-              <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} autoComplete="off" noValidate>
-
-            {/* Full name — register only */}
-            {tab === 'register' && (
-              <div className="form-group">
-                <label className="form-label form-label-required">Full Name</label>
-                <div className="input-group">
-                  <span className="input-icon"><User size={15} /></span>
-                  <input
-                    className="form-control"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={form.name}
-                    onChange={set('name')}
-                    autoComplete="off"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Email */}
-            <div className="form-group">
-              <label className="form-label form-label-required">Email Address</label>
-              <div className="input-group">
-                <span className="input-icon"><Mail size={15} /></span>
-                <input
-                  className="form-control"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={form.email}
-                  onChange={set('email')}
-                  autoComplete="off"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div className="form-group">
-              <label className="form-label form-label-required">Password</label>
-              <div className="input-group">
-                <span className="input-icon"><Lock size={15} /></span>
-                <input
-                  className="form-control"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={form.password}
-                  onChange={set('password')}
-                  autoComplete="new-password"
-                  required
-                  style={{ paddingRight: 42 }}
-                />
-                <button
-                  type="button"
-                  className="input-icon-right"
-                  onClick={() => setShowPassword((p) => !p)}
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm password — register only */}
-            {tab === 'register' && (
-              <div className="form-group">
-                <label className="form-label form-label-required">Confirm Password</label>
-                <div className="input-group">
-                  <span className="input-icon"><Lock size={15} /></span>
-                  <input
-                    className="form-control"
-                    type={showConfirm ? 'text' : 'password'}
-                    placeholder="Confirm your password"
-                    value={form.confirm}
-                    onChange={set('confirm')}
-                    autoComplete="new-password"
-                    required
-                    style={{ paddingRight: 42 }}
-                  />
-                  <button
-                    type="button"
-                    className="input-icon-right"
-                    onClick={() => setShowConfirm((p) => !p)}
-                    tabIndex={-1}
-                  >
-                    {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg"
-              style={{ width: '100%', marginTop: 6, justifyContent: 'center' }}
-              disabled={loading}
-            >
-              {loading && <span className="spinner" />}
-              {loading
-                ? (tab === 'login' ? 'Signing in…' : 'Creating account…')
-                : (tab === 'login' ? 'Sign In' : 'Create Account')}
-            </button>
-          </form>
-
-          <p style={{ marginTop: 20, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
-            {tab === 'login'
-              ? "Don't have an account? "
-              : 'Already have an account? '}
-            <button
-              onClick={() => switchTab(tab === 'login' ? 'register' : 'login')}
-              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', fontSize: 12 }}
-            >
-              {tab === 'login' ? 'Register here' : 'Sign in'}
-            </button>
-          </p>
         </div>
       </div>
     </div>
   );
+};
+
+const styles = {
+  page: {
+    display: 'flex',
+    minHeight: '100vh',
+    fontFamily: "'Inter', 'Segoe UI', sans-serif",
+  },
+
+  // Left dark panel
+  left: {
+    flex: 1,
+    background: 'linear-gradient(150deg, #0c1829 0%, #0f2847 50%, #0c1829 100%)',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '40px 48px',
+    color: '#fff',
+  },
+  brand: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 'auto',
+  },
+  brandIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    background: '#2563eb',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: 700,
+    letterSpacing: '-0.3px',
+  },
+  brandBold: { color: '#fff' },
+  brandAccent: { color: '#3b82f6' },
+
+  hero: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    maxWidth: 480,
+  },
+  heroTitle: {
+    fontSize: 36,
+    fontWeight: 800,
+    lineHeight: 1.25,
+    marginBottom: 16,
+    color: '#fff',
+  },
+  heroAccent: {
+    color: '#3b82f6',
+  },
+  heroSub: {
+    fontSize: 14,
+    color: '#94a3b8',
+    lineHeight: 1.7,
+    marginBottom: 32,
+    maxWidth: 380,
+  },
+  featureList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+  },
+  featureItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    fontSize: 14,
+    color: '#cbd5e1',
+  },
+  featureDot: {
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    background: '#3b82f6',
+    flexShrink: 0,
+  },
+
+  // Right white panel
+  right: {
+    width: 480,
+    flexShrink: 0,
+    background: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px 48px',
+  },
+  formBox: {
+    width: '100%',
+    maxWidth: 360,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: 700,
+    color: '#0f172a',
+    marginBottom: 4,
+  },
+  welcomeSub: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 24,
+  },
+
+  // Tabs
+  tabs: {
+    display: 'flex',
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  tab: {
+    flex: 1,
+    padding: '9px 0',
+    border: 'none',
+    background: 'transparent',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#64748b',
+    cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
+  },
+  tabActive: {
+    background: '#fff',
+    color: '#0f172a',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+  },
+
+  errorBox: {
+    background: '#fee2e2',
+    color: '#b91c1c',
+    padding: '10px 14px',
+    borderRadius: 7,
+    fontSize: 13,
+    marginBottom: 16,
+  },
+
+  // Form fields
+  field: {
+    marginBottom: 16,
+  },
+  label: {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#374151',
+    marginBottom: 6,
+  },
+  inputWrap: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: 12,
+    display: 'flex',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  input: {
+    width: '100%',
+    padding: '10px 12px 10px 38px',
+    border: '1px solid #e2e8f0',
+    borderRadius: 8,
+    fontSize: 13,
+    color: '#0f172a',
+    outline: 'none',
+    transition: 'border-color 0.15s',
+    background: '#fff',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 10,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    padding: 2,
+  },
+
+  submitBtn: {
+    width: '100%',
+    padding: '11px',
+    background: '#2563eb',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: 'pointer',
+    marginTop: 4,
+    transition: 'background 0.15s',
+  },
+
+  switchText: {
+    marginTop: 16,
+    fontSize: 12,
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  switchLink: {
+    background: 'none',
+    border: 'none',
+    color: '#2563eb',
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontSize: 12,
+    padding: 0,
+  },
 };
 
 export default Login;

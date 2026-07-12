@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, UserRound, Route, Wrench, BarChart3, Activity } from 'lucide-react';
+import { Truck, UserRound, Route, Wrench, BarChart3, Activity, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { dashboardStats, trips, maintenanceRecords } from '../data/dummyData';
+import { dashboardStats, trips, maintenanceRecords, vehicles } from '../data/dummyData';
 
 const TRIP_STATUS_COLOR = {
   Dispatched: { bg: 'rgba(76,141,255,0.15)',  color: '#60A5FA' },
@@ -16,13 +16,6 @@ const MAINT_PRIORITY_COLOR = {
   Medium: { bg: 'rgba(245,166,35,0.15)',  color: '#F5A623' },
   Low:    { bg: 'rgba(47,212,168,0.15)',  color: '#2FD4A8' },
 };
-
-const STAT_CARDS = [
-  { label: 'Total Vehicles',    caption: 'FLEET REGISTRY', key: 'totalVehicles',    Icon: Truck,     accent: 'var(--dc-blue)',   accentBg: 'var(--dc-blue-bg)'   },
-  { label: 'Active Trips',      caption: 'ROUTE LOG',      key: 'activeTrips',      Icon: Route,     accent: 'var(--dc-teal)',   accentBg: 'var(--dc-teal-bg)'   },
-  { label: 'Drivers Available', caption: 'CREW ROSTER',    key: 'driversAvailable', Icon: UserRound, accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
-  { label: 'Open Maintenance',  caption: 'SERVICE DESK',   key: 'openMaintenance',  Icon: Wrench,    accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
-];
 
 const QUICK_ACTIONS = [
   { to: '/vehicles',    label: 'Vehicles',    sub: 'FLEET REGISTRY', Icon: Truck,     accent: 'var(--dc-blue)',   accentBg: 'var(--dc-blue-bg)'   },
@@ -39,6 +32,22 @@ const Dashboard = () => {
   const { user } = useAuth();
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  // Compute KPIs from actual data
+  const availableVehicles = vehicles.filter(v => v.status === 'Available').length;
+  const vehiclesInMaintenance = vehicles.filter(v => v.status === 'In Shop' || v.status === 'Maintenance').length;
+  const pendingTrips = trips.filter(t => t.status === 'Draft').length;
+
+  // Extended STAT_CARDS with missing KPIs
+  const COMPUTED_STAT_CARDS = [
+    { label: 'Total Vehicles',        caption: 'FLEET REGISTRY',     value: dashboardStats.totalVehicles,    Icon: Truck,       accent: 'var(--dc-blue)',   accentBg: 'var(--dc-blue-bg)'   },
+    { label: 'Available Vehicles',    caption: 'READY FOR DISPATCH', value: availableVehicles,               Icon: CheckCircle, accent: 'var(--dc-green)',  accentBg: 'var(--dc-green-bg)'  },
+    { label: 'Vehicles in Maintenance', caption: 'SERVICE QUEUE',   value: vehiclesInMaintenance,           Icon: Wrench,      accent: 'var(--dc-orange)', accentBg: 'var(--dc-orange-bg)' },
+    { label: 'Active Trips',          caption: 'ROUTE LOG',          value: dashboardStats.activeTrips,      Icon: Route,       accent: 'var(--dc-teal)',   accentBg: 'var(--dc-teal-bg)'   },
+    { label: 'Pending Trips',         caption: 'AWAITING DISPATCH',  value: pendingTrips,                    Icon: Clock,       accent: 'var(--dc-yellow)', accentBg: 'var(--dc-yellow-bg)' },
+    { label: 'Drivers Available',     caption: 'CREW ROSTER',        value: dashboardStats.driversAvailable, Icon: UserRound,  accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
+    { label: 'Open Maintenance',      caption: 'SERVICE DESK',       value: dashboardStats.openMaintenance,  Icon: TrendingUp,  accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
+  ];
 
   return (
     <>
@@ -57,17 +66,17 @@ const Dashboard = () => {
           <line className="dc-connector-line" x1="0" y1="0.5" x2="100" y2="0.5" vectorEffect="non-scaling-stroke" />
         </svg>
         <div className="stats-grid">
-          {STAT_CARDS.map(({ label, caption, key, Icon, accent, accentBg }) => (
+          {COMPUTED_STAT_CARDS.map(({ label, caption, value, Icon, accent, accentBg }) => (
             <div
               className="dc-stat-card"
-              key={key}
+              key={label}
               style={{ '--dc-accent': accent, '--dc-accent-bg': accentBg }}
             >
               <span className="dc-stat-dot" style={{ background: accent, boxShadow: `0 0 0 3px ${accentBg}` }} />
               <div className="dc-icon-chip" style={{ background: accentBg, color: accent }}>
                 <Icon size={17} strokeWidth={2} />
               </div>
-              <div className="dc-stat-value font-mono">{dashboardStats[key]}</div>
+              <div className="dc-stat-value font-mono">{value}</div>
               <div className="dc-stat-label">{label}</div>
               <div className="dc-stat-caption">{caption}</div>
             </div>

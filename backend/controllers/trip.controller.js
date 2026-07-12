@@ -48,15 +48,28 @@ const createTrip = async (req, res) => {
       return res.status(400).json({ message: 'source, destination, vehicle, driver and plannedDistance are required' });
     }
 
-    // Validate vehicle and driver exist
     const [veh, drv] = await Promise.all([
       Vehicle.findById(vehicle),
       Driver.findById(driver),
     ]);
     if (!veh) return res.status(404).json({ message: 'Vehicle not found' });
     if (!drv) return res.status(404).json({ message: 'Driver not found' });
-    if (veh.status !== 'Available') return res.status(400).json({ message: `Vehicle is currently ${veh.status}` });
-    if (drv.status !== 'Available') return res.status(400).json({ message: `Driver is currently ${drv.status}` });
+
+    // ── Server-side business rule validation ──────────────────────
+    if (veh.status === 'Retired')
+      return res.status(400).json({ message: 'Vehicle is Retired and cannot be dispatched' });
+    if (veh.status === 'In Shop')
+      return res.status(400).json({ message: 'Vehicle is currently In Shop for maintenance' });
+    if (veh.status === 'On Trip')
+      return res.status(400).json({ message: 'Vehicle is already On Trip' });
+    if (drv.status === 'On Trip')
+      return res.status(400).json({ message: 'Driver is already On Trip' });
+    if (drv.status === 'Suspended')
+      return res.status(400).json({ message: 'Driver is Suspended and cannot be assigned' });
+    if (cargoWeight != null && veh.maxLoadCapacity && Number(cargoWeight) > veh.maxLoadCapacity)
+      return res.status(400).json({ message: `Cargo weight (${cargoWeight} kg) exceeds vehicle max load capacity (${veh.maxLoadCapacity} kg)` });
+    if (drv.licenseExpiryDate && new Date(drv.licenseExpiryDate) < new Date())
+      return res.status(400).json({ message: `Driver license expired on ${new Date(drv.licenseExpiryDate).toLocaleDateString()}` });
 
     const trip = await Trip.create({ source, destination, vehicle, driver, cargoWeight, plannedDistance, status: 'Draft' });
     await trip.populate('vehicle', 'registrationNumber name');
@@ -67,6 +80,41 @@ const createTrip = async (req, res) => {
   }
 };
 
+/**
+ * syncTripRelatedStatuses — called whenever a trip moves to
+ * Dispatched, Completed, or Cancelled.
+ *
+ * Uses the raw ObjectId values stored on the trip document
+ * (trip.vehicle, trip.driver) rather than first fetching those
+ * documents — this avoids the silent-null failure that happened
+ * when findById returned null for a mismatched ID.
+ */
+const syncTripRelatedStatuses = async (trip, newStatus, finalOdometer) => {
+  const vehicleId = trip.vehicle;
+  const driverId  = trip.driver;
+
+  if (newStatus === 'Dispatched') {
+    await Promise.all([
+      vehicleId && Vehicle.findByIdAndUpdate(vehicleId, { status: 'On Trip' }),
+      driverId  && Driver.findByIdAndUpdate(driverId,  { status: 'On Trip' }),
+    ]);
+    return;
+  }
+
+  if (newStatus === 'Completed' || newStatus === 'Cancelled') {
+    // Always revert — do not guard on fetching first so we never skip silently
+    const vehicleUpdate = { status: 'Available' };
+    if (newStatus === 'Completed' && finalOdometer) {
+      vehicleUpdate.odometer = Number(finalOdometer);
+    }
+
+    await Promise.all([
+      vehicleId && Vehicle.findByIdAndUpdate(vehicleId, vehicleUpdate),
+      driverId  && Driver.findByIdAndUpdate(driverId,  { status: 'Available' }),
+    ]);
+  }
+};
+
 const updateTrip = async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id);
@@ -74,21 +122,9 @@ const updateTrip = async (req, res) => {
 
     const { status, finalOdometer, fuelConsumed } = req.body;
 
-    // Handle status transitions — update vehicle and driver status accordingly
+    // Only sync statuses when the status is actually changing
     if (status && status !== trip.status) {
-      const [veh, drv] = await Promise.all([
-        Vehicle.findById(trip.vehicle),
-        Driver.findById(trip.driver),
-      ]);
-
-      if (status === 'Dispatched') {
-        if (veh) await Vehicle.findByIdAndUpdate(trip.vehicle, { status: 'On Trip' });
-        if (drv) await Driver.findByIdAndUpdate(trip.driver, { status: 'On Trip' });
-      }
-      if (status === 'Completed' || status === 'Cancelled') {
-        if (veh) await Vehicle.findByIdAndUpdate(trip.vehicle, { status: 'Available', ...(finalOdometer ? { odometer: finalOdometer } : {}) });
-        if (drv) await Driver.findByIdAndUpdate(trip.driver, { status: 'Available' });
-      }
+      await syncTripRelatedStatuses(trip, status, finalOdometer);
     }
 
     const updated = await Trip.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
@@ -110,4 +146,56 @@ const deleteTrip = async (req, res) => {
   }
 };
 
-module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip };
+/**
+ * POST /api/trips/reconcile
+ *
+ * One-time reconciliation: finds all Completed/Cancelled trips
+ * and ensures their linked vehicle and driver are set to Available,
+ * provided those vehicle/driver are not currently On Trip for a
+ * different Dispatched trip.
+ *
+ * Safe to call repeatedly — it only corrects stuck records.
+ */
+const reconcileStatuses = async (req, res) => {
+  try {
+    // Find all vehicle IDs and driver IDs still in Dispatched trips
+    const dispatchedTrips = await Trip.find({ status: 'Dispatched' }).select('vehicle driver');
+    const activeVehicleIds = new Set(dispatchedTrips.map(t => String(t.vehicle)));
+    const activeDriverIds  = new Set(dispatchedTrips.map(t => String(t.driver)));
+
+    // Collect all unique vehicle + driver IDs from completed/cancelled trips
+    const doneTrips = await Trip.find({ status: { $in: ['Completed', 'Cancelled'] } }).select('vehicle driver');
+
+    const vehiclesToFix = [];
+    const driversToFix  = [];
+
+    for (const t of doneTrips) {
+      const vid = String(t.vehicle);
+      const did = String(t.driver);
+      if (!activeVehicleIds.has(vid)) vehiclesToFix.push(t.vehicle);
+      if (!activeDriverIds.has(did))  driversToFix.push(t.driver);
+    }
+
+    // Only update those stuck on "On Trip" (don't touch Retired, In Shop etc.)
+    const [vRes, dRes] = await Promise.all([
+      Vehicle.updateMany(
+        { _id: { $in: vehiclesToFix }, status: 'On Trip' },
+        { $set: { status: 'Available' } }
+      ),
+      Driver.updateMany(
+        { _id: { $in: driversToFix }, status: 'On Trip' },
+        { $set: { status: 'Available' } }
+      ),
+    ]);
+
+    res.json({
+      message:         'Reconciliation complete',
+      vehiclesFixed:   vRes.modifiedCount,
+      driversFixed:    dRes.modifiedCount,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip, reconcileStatuses };

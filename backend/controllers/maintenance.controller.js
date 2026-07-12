@@ -53,9 +53,19 @@ const updateMaintenance = async (req, res) => {
     const record = await Maintenance.findById(req.params.id);
     if (!record) return res.status(404).json({ message: 'Maintenance record not found' });
 
-    // When closing maintenance, set vehicle back to Available
-    if (req.body.status === 'Closed' && record.status === 'Active') {
-      await Vehicle.findByIdAndUpdate(record.vehicle, { status: 'Available' });
+    const { status } = req.body;
+
+    // When closing/completing maintenance, always set vehicle back to Available 
+    // (unless the vehicle is Retired)
+    if ((status === 'Closed' || status === 'Completed') && (record.status === 'Active' || record.status === 'In Progress' || record.status === 'Scheduled')) {
+      // Use updateMany with vehicleId directly to avoid silent null failures
+      await Vehicle.updateMany(
+        { 
+          _id: record.vehicle, 
+          status: { $ne: 'Retired' } // Don't change Retired vehicles
+        },
+        { $set: { status: 'Available' } }
+      );
     }
 
     const updated = await Maintenance.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
@@ -70,9 +80,16 @@ const deleteMaintenance = async (req, res) => {
   try {
     const record = await Maintenance.findByIdAndDelete(req.params.id);
     if (!record) return res.status(404).json({ message: 'Maintenance record not found' });
-    // Restore vehicle status if record was active
-    if (record.status === 'Active') {
-      await Vehicle.findByIdAndUpdate(record.vehicle, { status: 'Available' });
+    
+    // If record was active, restore vehicle status (unless Retired)
+    if (record.status === 'Active' || record.status === 'In Progress') {
+      await Vehicle.updateMany(
+        { 
+          _id: record.vehicle, 
+          status: { $ne: 'Retired' }
+        },
+        { $set: { status: 'Available' } }
+      );
     }
     res.json({ message: 'Maintenance record deleted successfully' });
   } catch (err) {

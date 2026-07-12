@@ -102,7 +102,7 @@ const KPI_CARDS = [
   },
   {
     label: 'Cost per KM',
-    value: '$0.42',
+    value: '₹0.42',
     trend: '-2.3%',
     up: false,
     icon: DollarSign,
@@ -148,7 +148,7 @@ const exportAsTxt = () => {
     `Fleet Utilization   : 82%    (+5.1% vs last period)`,
     `Fuel Efficiency     : 6.4 km/L  (+1.9%)`,
     `Vehicle ROI         : 17.2%  (+1.4%)`,
-    `Cost per KM         : $0.42  (-2.3%)`,
+    `Cost per KM         : ₹0.42  (-2.3%)`,
     '',
     '── FLEET UTILIZATION (Last 12 months) ───────────',
     'Month   Utilization(%)',

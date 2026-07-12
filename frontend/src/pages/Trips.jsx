@@ -1,281 +1,161 @@
-import React, { useEffect, useState } from 'react';
-import { Route, Plus, Pencil, Trash2, Search, X, AlertCircle, Grid3x3, List } from 'lucide-react';
-import { getTrips, createTrip, updateTrip, deleteTrip } from '../api/trips.api';
-import { getVehicles } from '../api/vehicles.api';
-import { getDrivers  } from '../api/drivers.api';
-import { useToast } from '../context/ToastContext';
+import React, { useState } from 'react';
+import { Route, Plus, Pencil, Trash2, LayoutGrid, List } from 'lucide-react';
+import { trips as dummyTrips } from '../data/dummyData';
+import { createTrip, updateTrip, deleteTrip } from '../api/trips.api';
+import { Modal, FormField, Input, ErrorBanner, ModalFooter, EmptyState, PageHeader, SearchBar } from '../components/UI';
 
-const STATUS_BADGE = {
-  'Draft':      'badge-gray',
-  'Dispatched': 'badge-blue',
-  'Completed':  'badge-teal',
-  'Cancelled':  'badge-red',
-};
+const STATUS_BADGE = { Draft:'badge-gray', Dispatched:'badge-blue', Completed:'badge-green', Cancelled:'badge-red' };
+const EMPTY = { source:'', destination:'', vehicle:'', driver:'', cargoWeight:'', plannedDistance:'' };
 
-const EMPTY_FORM = { source: '', destination: '', vehicle: '', driver: '', cargoWeight: '', plannedDistance: '' };
-
-const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error, vehicles, drivers }) => (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
-<<<<<<< HEAD
-    <div style={{ 
-      background: 'rgba(30, 36, 51, 0.95)',
-      backdropFilter: 'blur(12px)',
-      borderRadius: 14, 
-      width: '100%', 
-      maxWidth: 540, 
-      boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-      border: '1px solid rgba(76, 141, 255, 0.15)',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid rgba(45, 53, 72, 0.6)' }}>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#E2E8F0' }}>{title}</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A7' }}><X size={18} /></button>
-=======
-    <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 540, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--border)' }}>
-        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "'Space Grotesk',sans-serif" }}>{title}</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-500)' }}><X size={18} /></button>
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
+const TripModal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
+  <Modal title={title} onClose={onClose} maxWidth={540}>
+    <form onSubmit={onSubmit}>
+      <ErrorBanner message={error} />
+      <div className="form-grid form-grid-2">
+        {[
+          { key:'source',          label:'Source',           placeholder:'e.g. Mumbai' },
+          { key:'destination',     label:'Destination',      placeholder:'e.g. Pune' },
+          { key:'vehicle',         label:'Vehicle Reg. No.', placeholder:'MH12AB1234' },
+          { key:'driver',          label:'Driver Name',      placeholder:'Rajesh Kumar' },
+          { key:'cargoWeight',     label:'Cargo (kg)',       placeholder:'0',   type:'number', req:false },
+          { key:'plannedDistance', label:'Distance (km)',    placeholder:'100', type:'number' },
+        ].map(({ key, label, placeholder, type, req=true }) => (
+          <FormField key={key} label={label} required={req}>
+            <Input type={type||'text'} placeholder={placeholder} value={form[key]}
+              onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} required={req} />
+          </FormField>
+        ))}
       </div>
-      <form onSubmit={onSubmit} style={{ padding: 24 }}>
-        {error && <div className="alert alert-error"><AlertCircle size={14} />{error}</div>}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ color: '#C4CEDC' }}>Source</label>
-            <input className="form-control" style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }} placeholder="e.g. Mumbai" value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))} required />
-          </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ color: '#C4CEDC' }}>Destination</label>
-            <input className="form-control" style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }} placeholder="e.g. Pune" value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} required />
-          </div>
-          {form.source && form.destination && (
-            <div style={{ gridColumn: '1 / -1', background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.3)', borderRadius: 'var(--radius)', padding: 12, marginBottom: 8 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', display: 'flex', alignItems: 'center', gap: 6 }}>
-                💡 Smart Dispatch
-              </div>
-              <div style={{ fontSize: 11, color: '#C4CEDC', marginTop: 4 }}>
-                Ready to dispatch: {vehicles.filter(v => v.status === 'Available').length} vehicles available, {drivers.filter(d => d.status === 'Available').length} drivers available
-              </div>
-            </div>
-          )}
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ color: '#C4CEDC' }}>Vehicle</label>
-            <select className="form-control" style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }} value={form.vehicle} onChange={e => setForm(f => ({ ...f, vehicle: e.target.value }))} required>
-              <option value="">Select vehicle</option>
-              {vehicles.filter(v => v.status === 'Available').map(v => <option key={v._id} value={v._id}>{v.registrationNumber} — {v.name}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ color: '#C4CEDC' }}>Driver</label>
-            <select className="form-control" style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }} value={form.driver} onChange={e => setForm(f => ({ ...f, driver: e.target.value }))} required>
-              <option value="">Select driver</option>
-              {drivers.filter(d => d.status === 'Available').map(d => <option key={d._id} value={d._id}>{d.name} — {d.licenseNumber}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ color: '#C4CEDC' }}>Cargo Weight (kg)</label>
-            <input className="form-control" style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }} type="number" placeholder="0" min="0" value={form.cargoWeight} onChange={e => setForm(f => ({ ...f, cargoWeight: e.target.value }))} />
-          </div>
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ color: '#C4CEDC' }}>Planned Distance (km)</label>
-            <input className="form-control" style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }} type="number" placeholder="100" min="0" value={form.plannedDistance} onChange={e => setForm(f => ({ ...f, plannedDistance: e.target.value }))} required />
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading && <span className="spinner" />}{loading ? 'Saving…' : 'Save Trip'}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+      <ModalFooter onClose={onClose} loading={loading} saveLabel="Save Trip" />
+    </form>
+  </Modal>
 );
 
+const STATUS_FILTERS = ['All','Dispatched','Draft','Completed','Cancelled'];
+
 const Trips = () => {
-  const toast = useToast();
-  const [trips,     setTrips]     = useState([]);
-  const [vehicles,  setVehicles]  = useState([]);
-  const [drivers,   setDrivers]   = useState([]);
-  const [search,    setSearch]    = useState('');
-  const [loading,   setLoading]   = useState(true);
+  const [trips, setTrips]         = useState(dummyTrips.map(t => ({ ...t, _id: t.tripId })));
+  const [search, setSearch]       = useState('');
+  const [activeTab, setActiveTab] = useState('All');
   const [modalOpen, setModalOpen] = useState(false);
-<<<<<<< HEAD
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'kanban'
-=======
-  const [editing,   setEditing]   = useState(null);
-  const [form,      setForm]      = useState(EMPTY_FORM);
-  const [saving,    setSaving]    = useState(false);
-  const [error,     setError]     = useState('');
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
+  const [editing, setEditing]     = useState(null);
+  const [form, setForm]           = useState(EMPTY);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
+  const [viewMode, setViewMode]   = useState('table'); // 'table' or 'kanban'
 
-  const load = () => {
-    setLoading(true);
-    Promise.all([getTrips(), getVehicles(), getDrivers()])
-      .then(([t, v, d]) => { setTrips(t.data); setVehicles(v.data); setDrivers(d.data); })
-      .catch(() => {}).finally(() => setLoading(false));
-  };
-  useEffect(() => { load(); }, []);
-
-  const openAdd  = () => { setEditing(null); setForm(EMPTY_FORM); setError(''); setModalOpen(true); };
-  const openEdit = (t) => {
+  const openAdd = () => { setEditing(null); setForm(EMPTY); setError(''); setModalOpen(true); };
+  const openEdit = t => {
     setEditing(t._id);
-    setForm({ source: t.source, destination: t.destination, vehicle: t.vehicle?._id || '', driver: t.driver?._id || '', cargoWeight: t.cargoWeight, plannedDistance: t.plannedDistance });
+    setForm({ source:t.source, destination:t.destination, vehicle:t.vehicle||'', driver:t.driver||'', cargoWeight:'', plannedDistance:t.distance||'' });
     setError(''); setModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault(); setError(''); setSaving(true);
     try {
       if (editing) {
         await updateTrip(editing, form);
-        toast.success('Trip updated', `${form.source} → ${form.destination}`);
+        setTrips(ts => ts.map(t => t._id === editing ? { ...t, ...form } : t));
       } else {
-        await createTrip(form);
-        toast.success('Trip created', `${form.source} → ${form.destination}`);
+        const newTrip = { ...form, _id:`T-${Date.now()}`, tripId:`T-${Date.now()}`, status:'Draft', startDate:new Date().toISOString().split('T')[0] };
+        try { const res = await createTrip(form); setTrips(ts => [{ ...res.data, _id:res.data._id }, ...ts]); }
+        catch { setTrips(ts => [newTrip, ...ts]); }
       }
-      setModalOpen(false); load();
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to save trip.';
-      setError(msg);
-      toast.error('Save failed', msg);
-    } finally { setSaving(false); }
+      setModalOpen(false);
+    } catch (err) { setError(err.response?.data?.message || 'Failed to save trip.'); }
+    finally { setSaving(false); }
   };
 
-  const handleStatusChange = async (trip, newStatus) => {
-    try {
-      await updateTrip(trip._id, { status: newStatus });
-      const label = `${trip.source} → ${trip.destination}`;
-      if (newStatus === 'Dispatched') toast.info('Trip dispatched',  label);
-      if (newStatus === 'Completed')  toast.success('Trip completed', label);
-      if (newStatus === 'Cancelled')  toast.warning('Trip cancelled', label);
-      load();
-    } catch (err) {
-      toast.error('Status update failed', err.response?.data?.message || 'Could not update status.');
-    }
+  const changeStatus = (id, s) => {
+    setTrips(ts => ts.map(t => t._id === id ? { ...t, status:s } : t));
+    updateTrip(id, { status:s }).catch(() => {});
   };
 
-  const handleDelete = async (t) => {
+  const handleDelete = id => {
     if (!window.confirm('Delete this trip?')) return;
-    try {
-      await deleteTrip(t._id);
-      toast.warning('Trip deleted', `${t.source} → ${t.destination}`);
-      load();
-    } catch (err) {
-      toast.error('Delete failed', err.response?.data?.message || 'Could not delete trip.');
-    }
+    setTrips(ts => ts.filter(t => t._id !== id));
+    deleteTrip(id).catch(() => {});
   };
 
   const filtered = trips.filter(t =>
-    t.source?.toLowerCase().includes(search.toLowerCase()) ||
-    t.destination?.toLowerCase().includes(search.toLowerCase()) ||
-    t.vehicle?.registrationNumber?.toLowerCase().includes(search.toLowerCase())
+    (activeTab === 'All' || t.status === activeTab) &&
+    [t.source, t.destination, t.driver, t.vehicle].some(v =>
+      v?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
-    <div style={{ '--page-accent': 'var(--dc-teal)', '--page-accent-bg': 'var(--dc-teal-bg)' }}>
+    <>
       {modalOpen && (
-        <Modal
-          title={editing ? 'Edit Trip' : 'New Trip'}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleSubmit}
-          form={form} setForm={setForm}
-          loading={saving} error={error}
-          vehicles={vehicles} drivers={drivers}
-        />
+        <TripModal title={editing ? 'Edit Trip' : 'New Trip'}
+          onClose={() => setModalOpen(false)} onSubmit={handleSubmit}
+          form={form} setForm={setForm} loading={saving} error={error} />
       )}
 
-      <div className="page-header">
-        <div className="page-header-left">
-          <h1>Trips</h1>
-          <p>
-            {trips.length} total &nbsp;·&nbsp;
-            {trips.filter(t => t.status === 'Dispatched').length} active &nbsp;·&nbsp;
-            {trips.filter(t => t.status === 'Completed').length} completed
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={openAdd}><Plus size={15} />New Trip</button>
+      <PageHeader title="Trips"
+        subtitle={`${trips.length} trips total · ${trips.filter(t=>t.status==='Dispatched').length} active`}
+        action={<button className="btn btn-primary" onClick={openAdd}><Plus size={15}/>New Trip</button>} />
+
+      <div className="tab-bar">
+        {STATUS_FILTERS.map(s => {
+          const count = s === 'All' ? trips.length : trips.filter(t => t.status === s).length;
+          return (
+            <button key={s} className={`tab-btn${activeTab===s?' active':''}`} onClick={() => setActiveTab(s)}>
+              {s}
+              <span className="tab-count">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="card">
         <div className="card-header">
-          <span className="card-title">All Trips ({filtered.length})</span>
-          <div className="search-bar">
-            <span className="search-bar-icon"><Search size={14} /></span>
-            <input type="text" placeholder="Search trips…" value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-            <button 
-              className={`btn btn-sm ${viewMode === 'kanban' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setViewMode('kanban')}
-              title="Kanban view"
-            >
-              <Grid3x3 size={14} strokeWidth={2} />
-            </button>
-            <button 
-              className={`btn btn-sm ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setViewMode('table')}
-              title="List view"
-            >
-              <List size={14} strokeWidth={2} />
-            </button>
+          <span className="card-title">Trips <span style={{ color:'var(--dc-text-faint)', fontWeight:400 }}>({filtered.length})</span></span>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <SearchBar value={search} onChange={setSearch} placeholder="Route, driver, vehicle…" />
+            <div style={{ display: 'flex', background: 'var(--dc-panel)', border: '1px solid var(--dc-line)', borderRadius: 8, padding: 4 }}>
+              <button onClick={() => setViewMode('table')} title="Table view"
+                style={{ padding: '6px 10px', background: viewMode === 'table' ? 'rgba(37, 99, 235, 0.15)' : 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', color: viewMode === 'table' ? 'var(--dc-blue)' : 'var(--dc-text-dim)', transition: 'all 0.2s' }}>
+                <List size={16} strokeWidth={2} />
+              </button>
+              <button onClick={() => setViewMode('kanban')} title="Kanban view"
+                style={{ padding: '6px 10px', background: viewMode === 'kanban' ? 'rgba(37, 99, 235, 0.15)' : 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', color: viewMode === 'kanban' ? 'var(--dc-blue)' : 'var(--dc-text-dim)', transition: 'all 0.2s' }}>
+                <LayoutGrid size={16} strokeWidth={2} />
+              </button>
+            </div>
           </div>
         </div>
-<<<<<<< HEAD
-        {viewMode === 'table' ? (
+
+        {/* TABLE VIEW */}
+        {viewMode === 'table' && (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Route</th><th>Vehicle</th><th>Driver</th><th>Cargo (kg)</th><th>Distance (km)</th><th>Status</th><th>Actions</th></tr></thead>
+              <thead>
+                <tr><th>Trip ID</th><th>Route</th><th>Driver</th><th>Vehicle</th><th>Distance</th><th>Date</th><th>Status</th><th style={{ textAlign:'right' }}>Actions</th></tr>
+              </thead>
               <tbody>
-                {loading ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</td></tr>
-                : filtered.length === 0 ? (
-                  <tr><td colSpan={7}><div className="empty-state">
-                    <div className="empty-state-icon"><Route size={22} strokeWidth={1.5} /></div>
-                    <h3>No trips found</h3><p>Create a trip to dispatch a vehicle and driver.</p>
-                    <button className="btn btn-primary" onClick={openAdd}><Plus size={14} />New Trip</button>
-                  </div></td></tr>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={8}>
+                    <EmptyState icon={Route} title="No trips found"
+                      description="Create your first trip to start dispatching vehicles and drivers."
+                      action={<button className="btn btn-primary" onClick={openAdd}><Plus size={14}/>New Trip</button>} />
+                  </td></tr>
                 ) : filtered.map(t => (
                   <tr key={t._id}>
-                    <td className="td-primary">{t.source} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>→</span> {t.destination}</td>
-                    <td>{t.vehicle?.registrationNumber ?? '—'}</td>
-                    <td>{t.driver?.name ?? '—'}</td>
-                    <td>{t.cargoWeight}</td>
-                    <td>{t.plannedDistance}</td>
-                    <td><span className={`badge ${STATUS_BADGE[t.status] ?? 'badge-gray'}`}>{t.status}</span></td>
+                    <td style={{ fontFamily:'monospace', fontSize:11, color:'var(--dc-text-faint)' }}>{t.tripId||t._id}</td>
+                    <td><span className="td-primary">{t.source}</span><span style={{ color:'var(--dc-text-faint)', margin:'0 5px' }}>→</span><span className="td-primary">{t.destination}</span></td>
+                    <td style={{ color:'var(--dc-text-dim)', fontSize:12 }}>{t.driver}</td>
+                    <td style={{ color:'var(--dc-text-faint)', fontSize:11, fontFamily:'monospace' }}>{t.vehicle}</td>
+                    <td style={{ fontSize:12 }}>{t.distance||t.plannedDistance} km</td>
+                    <td style={{ fontSize:11, color:'var(--dc-text-faint)', fontFamily:'monospace' }}>{t.startDate}</td>
+                    <td><span className={`badge ${STATUS_BADGE[t.status]??'badge-gray'}`}>{t.status}</span></td>
                     <td>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {t.status === 'Draft' && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--primary)' }} onClick={() => handleStatusChange(t, 'Dispatched')}>Dispatch</button>}
-                        {t.status === 'Dispatched' && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--success)' }} onClick={() => handleStatusChange(t, 'Completed')}>Complete</button>}
-                        {(t.status === 'Draft' || t.status === 'Dispatched') && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--warning)' }} onClick={() => handleStatusChange(t, 'Cancelled')}>Cancel</button>}
-                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(t)}><Pencil size={13} /></button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(t._id)} style={{ color: 'var(--danger)' }}><Trash2 size={13} /></button>
+                      <div className="row-actions" style={{ display:'flex', gap:4, justifyContent:'flex-end', flexWrap:'wrap' }}>
+                        {t.status==='Draft'      && <button className="btn btn-ghost btn-sm hoverable" style={{ color:'var(--dc-blue)' }} onClick={() => changeStatus(t._id,'Dispatched')}>Dispatch</button>}
+                        {t.status==='Dispatched' && <button className="btn btn-ghost btn-sm hoverable" style={{ color:'var(--dc-teal)' }} onClick={() => changeStatus(t._id,'Completed')}>Complete</button>}
+                        {(t.status==='Draft'||t.status==='Dispatched') && <button className="btn btn-ghost btn-sm hoverable" style={{ color:'var(--dc-amber)' }} onClick={() => changeStatus(t._id,'Cancelled')}>Cancel</button>}
+                        <button className="btn btn-ghost btn-sm hoverable" onClick={() => openEdit(t)}><Pencil size={13}/></button>
+                        <button className="btn btn-ghost btn-sm hoverable" onClick={() => handleDelete(t._id)} style={{ color:'var(--dc-red)' }}><Trash2 size={13}/></button>
                       </div>
                     </td>
                   </tr>
@@ -283,133 +163,85 @@ const Trips = () => {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div style={{ padding: 20, overflowX: 'auto' }}>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, minWidth: '1000px' }}>
-                {['Draft', 'Dispatched', 'Completed', 'Cancelled'].map(status => {
-                  const statusTrips = filtered.filter(t => t.status === status);
-                  return (
-                    <div key={status} style={{
-                      background: 'rgba(255, 255, 255, 0.5)',
-                      border: '1px solid rgba(226, 232, 240, 0.4)',
-                      borderRadius: 'var(--radius-lg)',
-                      padding: 14,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 12,
-                      maxHeight: '600px',
-                      overflowY: 'auto',
-                    }}>
-                      <div style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: 'var(--text)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                      }}>
-                        <span className={`badge ${STATUS_BADGE[status]}`}>{status}</span>
-                        <span style={{ background: 'rgba(226,232,240,0.6)', padding: '2px 8px', borderRadius: '99px', fontSize: 11, fontWeight: 700 }}>{statusTrips.length}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {statusTrips.map(t => (
+        )}
+
+        {/* KANBAN VIEW */}
+        {viewMode === 'kanban' && (
+          <div className="card-body" style={{ padding: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, padding: 16, overflowX: 'auto' }}>
+              {['Draft', 'Dispatched', 'Completed', 'Cancelled'].map(status => {
+                const statusTrips = trips.filter(t => t.status === status);
+                const statusColors = {
+                  'Draft': { bg: 'rgba(107, 114, 128, 0.1)', border: '#6B7280', label: '#6B7280' },
+                  'Dispatched': { bg: 'rgba(59, 130, 246, 0.1)', border: '#3B82F6', label: '#3B82F6' },
+                  'Completed': { bg: 'rgba(16, 185, 129, 0.1)', border: '#10B981', label: '#10B981' },
+                  'Cancelled': { bg: 'rgba(239, 68, 68, 0.1)', border: '#EF4444', label: '#EF4444' }
+                };
+                const colors = statusColors[status];
+
+                return (
+                  <div key={status} style={{
+                    background: colors.bg,
+                    border: `2px solid ${colors.border}`,
+                    borderRadius: 12,
+                    padding: 12,
+                    minHeight: 400,
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}>
+                    {/* Column Header */}
+                    <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${colors.border}` }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: colors.label }}>{status}</div>
+                      <div style={{ fontSize: 12, color: 'var(--dc-text-faint)', marginTop: 4 }}>{statusTrips.length} trip{statusTrips.length !== 1 ? 's' : ''}</div>
+                    </div>
+
+                    {/* Cards */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                      {statusTrips.length === 0 ? (
+                        <div style={{ textAlign: 'center', color: 'var(--dc-text-faint)', fontSize: 12, marginTop: 'auto', marginBottom: 'auto' }}>No trips</div>
+                      ) : (
+                        statusTrips.map(t => (
                           <div key={t._id} style={{
-                            background: 'rgba(255, 255, 255, 0.9)',
-                            border: '1px solid rgba(226, 232, 240, 0.6)',
-                            borderRadius: 'var(--radius)',
-                            padding: 12,
-                            fontSize: 12,
-                            cursor: 'pointer',
+                            background: 'var(--dc-panel)',
+                            border: '1px solid var(--dc-line)',
+                            borderRadius: 8,
+                            padding: 10,
+                            cursor: 'grab',
                             transition: 'all 0.2s',
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.1)';
+                          onMouseEnter={e => {
                             e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.1)';
                           }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                          onMouseLeave={e => {
                             e.currentTarget.style.transform = 'translateY(0)';
-                          }}
-                          onClick={() => openEdit(t)}
-                          >
-                            <div style={{ fontWeight: 600, color: 'var(--text)' }}>{t.source} → {t.destination}</div>
-                            <div style={{ color: 'var(--text-muted)', marginTop: 6 }}>🚗 {t.vehicle?.registrationNumber || 'No vehicle'}</div>
-                            <div style={{ color: 'var(--text-muted)', marginTop: 3 }}>👤 {t.driver?.name || 'No driver'}</div>
-                            <div style={{ display: 'flex', gap: 8, marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(226,232,240,0.3)', justifyContent: 'flex-end' }}>
-                              {t.status === 'Draft' && <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', fontSize: 10 }} onClick={(e) => { e.stopPropagation(); handleStatusChange(t, 'Dispatched'); }}>Dispatch</button>}
-                              {t.status === 'Dispatched' && <button className="btn btn-ghost btn-sm" style={{ padding: '2px 6px', fontSize: 10, color: 'var(--success)' }} onClick={(e) => { e.stopPropagation(); handleStatusChange(t, 'Completed'); }}>Complete</button>}
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}>
+                            <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--dc-text-faint)' }}>{t.tripId||t._id}</div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--dc-text)', marginTop: 4 }}>{t.source} → {t.destination}</div>
+                            <div style={{ fontSize: 11, color: 'var(--dc-text-dim)', marginTop: 6, lineHeight: 1.4 }}>
+                              <div>👤 {t.driver}</div>
+                              <div>🚚 {t.vehicle}</div>
+                              <div>📍 {t.distance||t.plannedDistance} km</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+                              {t.status==='Draft' && <button className="btn btn-ghost btn-xs" onClick={() => changeStatus(t._id,'Dispatched')} style={{ flex: 1, fontSize: 10 }}>Dispatch</button>}
+                              {t.status==='Dispatched' && <button className="btn btn-ghost btn-xs" onClick={() => changeStatus(t._id,'Completed')} style={{ flex: 1, fontSize: 10 }}>Complete</button>}
+                              {(t.status==='Draft'||t.status==='Dispatched') && <button className="btn btn-ghost btn-xs" onClick={() => changeStatus(t._id,'Cancelled')} style={{ flex: 1, fontSize: 10 }}>Cancel</button>}
+                              <button className="btn btn-ghost btn-xs" onClick={() => handleDelete(t._id)} style={{ flex: 1, fontSize: 10, color: 'var(--dc-red)' }}>Delete</button>
                             </div>
                           </div>
-                        ))}
-                        {statusTrips.length === 0 && (
-                          <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 12 }}>No trips</div>
-                        )}
-                      </div>
-=======
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Route</th>
-                <th>Vehicle</th>
-                <th>Driver</th>
-                <th>Cargo (kg)</th>
-                <th>Distance (km)</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-                    Loading trips...
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7}>
-                  <div className="empty-state">
-                    <div className="empty-state-icon"><Route size={22} strokeWidth={1.5} /></div>
-                    <h3>No trips found</h3>
-                    <p>Create a trip to dispatch a vehicle and driver.</p>
-                    <button className="btn btn-primary" onClick={openAdd}><Plus size={14} />New Trip</button>
-                  </div>
-                </td></tr>
-              ) : filtered.map(t => (
-                <tr key={t._id}>
-                  <td className="td-primary">
-                    {t.source}
-                    <span style={{ color: 'var(--dc-text-faint)', fontWeight: 400, margin: '0 4px' }}>→</span>
-                    {t.destination}
-                  </td>
-                  <td style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{t.vehicle?.registrationNumber ?? '—'}</td>
-                  <td>{t.driver?.name ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Unassigned</span>}</td>
-                  <td style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{t.cargoWeight}</td>
-                  <td style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{t.plannedDistance}</td>
-                  <td><span className={`badge ${STATUS_BADGE[t.status] ?? 'badge-gray'}`}>{t.status}</span></td>
-                  <td>
-                    <div className="row-actions" style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                      {t.status === 'Draft'      && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--dc-blue)'  }} onClick={() => handleStatusChange(t, 'Dispatched')}>Dispatch</button>}
-                      {t.status === 'Dispatched' && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--dc-teal)'  }} onClick={() => handleStatusChange(t, 'Completed')}>Complete</button>}
-                      {(t.status === 'Draft' || t.status === 'Dispatched') &&
-                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--dc-amber)' }} onClick={() => handleStatusChange(t, 'Cancelled')}>Cancel</button>}
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(t)}><Pencil size={13} /></button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(t)} style={{ color: 'var(--dc-red)' }}><Trash2 size={13} /></button>
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
+                        ))
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
-
 export default Trips;

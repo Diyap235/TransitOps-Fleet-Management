@@ -2,36 +2,36 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Truck, UserRound, Route, Wrench, BarChart3,
-  LayoutDashboard, X,
+  LayoutDashboard,
 } from 'lucide-react';
 import { getVehicles } from '../api/vehicles.api';
 import { getDrivers  } from '../api/drivers.api';
 import { getTrips    } from '../api/trips.api';
 
-// ── Static quick-jump actions ─────────────────────────────────────
+// ── Static quick-jump actions — each has an explicit `to` path ───
 const QUICK = [
-  { label: 'Dashboard',   icon: LayoutDashboard, tag: 'PAGE',      to: '/'            },
-  { label: 'Vehicles',    icon: Truck,           tag: 'PAGE',      to: '/vehicles'    },
-  { label: 'Drivers',     icon: UserRound,       tag: 'PAGE',      to: '/drivers'     },
-  { label: 'Trips',       icon: Route,           tag: 'PAGE',      to: '/trips'       },
-  { label: 'Maintenance', icon: Wrench,          tag: 'PAGE',      to: '/maintenance' },
-  { label: 'Reports',     icon: BarChart3,       tag: 'PAGE',      to: '/reports'     },
+  { label: 'Dashboard',   icon: LayoutDashboard, tag: 'PAGE', to: '/'            },
+  { label: 'Vehicles',    icon: Truck,           tag: 'PAGE', to: '/vehicles'    },
+  { label: 'Drivers',     icon: UserRound,       tag: 'PAGE', to: '/drivers'     },
+  { label: 'Trips',       icon: Route,           tag: 'PAGE', to: '/trips'       },
+  { label: 'Maintenance', icon: Wrench,          tag: 'PAGE', to: '/maintenance' },
+  { label: 'Reports',     icon: BarChart3,       tag: 'PAGE', to: '/reports'     },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────
 const match = (text = '', q = '') =>
   text.toLowerCase().includes(q.toLowerCase());
 
 const CommandPalette = ({ open, onClose }) => {
-  const navigate   = useNavigate();
-  const inputRef   = useRef(null);
-  const [query, setQuery]       = useState('');
+  const navigate  = useNavigate();
+  const inputRef  = useRef(null);
+
+  const [query,    setQuery]    = useState('');
   const [vehicles, setVehicles] = useState([]);
   const [drivers,  setDrivers]  = useState([]);
   const [trips,    setTrips]    = useState([]);
   const [focused,  setFocused]  = useState(0);
 
-  // Load data once when palette opens
+  // Load real data once when palette opens
   useEffect(() => {
     if (!open) return;
     setQuery('');
@@ -54,49 +54,84 @@ const CommandPalette = ({ open, onClose }) => {
     return () => window.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  // Build filtered result groups
   const q = query.trim();
 
-  const quickResults = QUICK.filter(a =>
-    !q || match(a.label, q)
-  );
+  const quickResults = QUICK.filter(a => !q || match(a.label, q));
 
-  const vehicleResults = vehicles.filter(v =>
-    !q || match(v.registrationNumber, q) || match(v.name, q)
-  ).slice(0, 5);
+  const vehicleResults = vehicles
+    .filter(v => !q || match(v.registrationNumber, q) || match(v.name, q))
+    .slice(0, 5);
 
-  const driverResults = drivers.filter(d =>
-    !q || match(d.name, q) || match(d.licenseNumber, q)
-  ).slice(0, 5);
+  const driverResults = drivers
+    .filter(d => !q || match(d.name, q) || match(d.licenseNumber, q))
+    .slice(0, 5);
 
-  const tripResults = trips.filter(t =>
-    !q || match(t.source, q) || match(t.destination, q) ||
-    match(t.vehicle?.registrationNumber, q)
-  ).slice(0, 5);
+  const tripResults = trips
+    .filter(t =>
+      !q ||
+      match(t.source, q) ||
+      match(t.destination, q) ||
+      match(t.vehicle?.registrationNumber, q)
+    )
+    .slice(0, 5);
 
-  // Flatten for keyboard nav
+  // ── Flat list of items with resolved destination paths ───────────
   const allItems = [
-    ...quickResults.map(a   => ({ type: 'quick',   data: a })),
-    ...vehicleResults.map(v => ({ type: 'vehicle', data: v })),
-    ...driverResults.map(d  => ({ type: 'driver',  data: d })),
-    ...tripResults.map(t    => ({ type: 'trip',    data: t })),
+    ...quickResults.map(a => ({
+      icon:      a.icon,
+      label:     a.label,
+      tag:       a.tag,
+      to:        a.to,
+      tint:      'var(--dc-blue-bg)',
+      iconColor: 'var(--dc-blue)',
+    })),
+    ...vehicleResults.map(v => ({
+      icon:      Truck,
+      label:     `${v.registrationNumber} — ${v.name}`,
+      tag:       v.status ?? 'VEHICLE',
+      to:        '/vehicles',          // navigates to Vehicles page
+      tint:      'var(--dc-blue-bg)',
+      iconColor: 'var(--dc-blue)',
+    })),
+    ...driverResults.map(d => ({
+      icon:      UserRound,
+      label:     d.name,
+      tag:       d.status ?? 'DRIVER',
+      to:        '/drivers',           // navigates to Drivers page
+      tint:      'var(--dc-violet-bg)',
+      iconColor: 'var(--dc-violet)',
+    })),
+    ...tripResults.map(t => ({
+      icon:      Route,
+      label:     `${t.source} → ${t.destination}`,
+      tag:       t.status ?? 'TRIP',
+      to:        '/trips',             // navigates to Trips page
+      tint:      'var(--dc-teal-bg)',
+      iconColor: 'var(--dc-teal)',
+    })),
   ];
 
+  // Single navigation handler — uses the item's own `to` field
   const go = useCallback((item) => {
-    if (item.type === 'quick')   { navigate(item.data.to); }
-    if (item.type === 'vehicle') { navigate('/vehicles'); }
-    if (item.type === 'driver')  { navigate('/drivers');  }
-    if (item.type === 'trip')    { navigate('/trips');    }
+    navigate(item.to);
     onClose();
   }, [navigate, onClose]);
 
-  // Arrow key + Enter navigation
+  // Arrow key + Enter keyboard navigation
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (e.key === 'ArrowDown') { e.preventDefault(); setFocused(f => Math.min(f + 1, allItems.length - 1)); }
-      if (e.key === 'ArrowUp')   { e.preventDefault(); setFocused(f => Math.max(f - 1, 0)); }
-      if (e.key === 'Enter' && allItems[focused]) go(allItems[focused]);
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocused(f => Math.min(f + 1, allItems.length - 1));
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocused(f => Math.max(f - 1, 0));
+      }
+      if (e.key === 'Enter' && allItems[focused]) {
+        go(allItems[focused]);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -104,29 +139,36 @@ const CommandPalette = ({ open, onClose }) => {
 
   if (!open) return null;
 
-  // Helper to render a single result item
-  let globalIdx = 0;
-  const Item = ({ icon: Icon, label, tag, tint = 'var(--dc-blue-bg)', iconColor = 'var(--dc-blue)' }) => {
-    const idx = globalIdx++;
-    return (
-      <div
-        className={`cmd-item${focused === idx ? ' focused' : ''}`}
-        onMouseEnter={() => setFocused(idx)}
-        onClick={() => go(allItems[idx])}
+  // ── Result row — receives the full item object and its flat index ─
+  const Item = ({ item, idx }) => (
+    <div
+      className={`cmd-item${focused === idx ? ' focused' : ''}`}
+      onMouseEnter={() => setFocused(idx)}
+      onClick={() => go(item)}
+    >
+      <span
+        className="cmd-item-icon"
+        style={{ background: item.tint, color: item.iconColor }}
       >
-        <span className="cmd-item-icon" style={{ background: tint, color: iconColor }}>
-          <Icon size={14} strokeWidth={2} />
-        </span>
-        <span className="cmd-item-label">{label}</span>
-        <span className="cmd-item-tag">{tag}</span>
-      </div>
-    );
-  };
+        <item.icon size={14} strokeWidth={2} />
+      </span>
+      <span className="cmd-item-label">{item.label}</span>
+      <span className="cmd-item-tag">{item.tag}</span>
+    </div>
+  );
 
-  const hasAnyResult = allItems.length > 0;
+  // ── Render grouped sections, tracking global flat index ──────────
+  let idx = 0;
+  const quickSlice   = allItems.slice(0, quickResults.length);
+  const vehicleSlice = allItems.slice(quickResults.length, quickResults.length + vehicleResults.length);
+  const driverSlice  = allItems.slice(quickResults.length + vehicleResults.length, quickResults.length + vehicleResults.length + driverResults.length);
+  const tripSlice    = allItems.slice(quickResults.length + vehicleResults.length + driverResults.length);
 
   return (
-    <div className="cmd-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      className="cmd-backdrop"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="cmd-panel" role="dialog" aria-label="Command Palette" aria-modal="true">
 
         {/* Input row */}
@@ -146,64 +188,47 @@ const CommandPalette = ({ open, onClose }) => {
 
         {/* Results */}
         <div className="cmd-results">
-          {!hasAnyResult && (
+          {allItems.length === 0 && (
             <div className="cmd-empty">No results for "{query}"</div>
           )}
 
-          {quickResults.length > 0 && (
+          {quickSlice.length > 0 && (
             <>
               <div className="cmd-group-label">Quick Jump</div>
-              {quickResults.map(a => (
-                <Item key={a.to} icon={a.icon} label={a.label} tag={a.tag} />
-              ))}
+              {quickSlice.map((item) => {
+                const i = idx++;
+                return <Item key={item.to} item={item} idx={i} />;
+              })}
             </>
           )}
 
-          {vehicleResults.length > 0 && (
+          {vehicleSlice.length > 0 && (
             <>
               <div className="cmd-group-label">Vehicles</div>
-              {vehicleResults.map(v => (
-                <Item
-                  key={v._id}
-                  icon={Truck}
-                  label={`${v.registrationNumber} — ${v.name}`}
-                  tag={v.status ?? 'VEHICLE'}
-                  tint="var(--dc-blue-bg)"
-                  iconColor="var(--dc-blue)"
-                />
-              ))}
+              {vehicleSlice.map((item) => {
+                const i = idx++;
+                return <Item key={item.label} item={item} idx={i} />;
+              })}
             </>
           )}
 
-          {driverResults.length > 0 && (
+          {driverSlice.length > 0 && (
             <>
               <div className="cmd-group-label">Drivers</div>
-              {driverResults.map(d => (
-                <Item
-                  key={d._id}
-                  icon={UserRound}
-                  label={d.name}
-                  tag={d.status ?? 'DRIVER'}
-                  tint="var(--dc-violet-bg)"
-                  iconColor="var(--dc-violet)"
-                />
-              ))}
+              {driverSlice.map((item) => {
+                const i = idx++;
+                return <Item key={item.label} item={item} idx={i} />;
+              })}
             </>
           )}
 
-          {tripResults.length > 0 && (
+          {tripSlice.length > 0 && (
             <>
               <div className="cmd-group-label">Trips</div>
-              {tripResults.map(t => (
-                <Item
-                  key={t._id}
-                  icon={Route}
-                  label={`${t.source} → ${t.destination}`}
-                  tag={t.status ?? 'TRIP'}
-                  tint="var(--dc-teal-bg)"
-                  iconColor="var(--dc-teal)"
-                />
-              ))}
+              {tripSlice.map((item) => {
+                const i = idx++;
+                return <Item key={item.label} item={item} idx={i} />;
+              })}
             </>
           )}
         </div>

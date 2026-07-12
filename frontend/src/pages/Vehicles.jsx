@@ -1,429 +1,166 @@
-import React, { useEffect, useState } from 'react';
-<<<<<<< HEAD
-import { Truck, Plus, Pencil, Trash2, Search, X, AlertCircle, Grid3x3, List } from 'lucide-react';
-=======
-import { Truck, Plus, Pencil, Trash2, Search, X, AlertCircle, MoreHorizontal } from 'lucide-react';
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
-import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from '../api/vehicles.api';
-import { useToast } from '../context/ToastContext';
+import React, { useState } from 'react';
+import { Truck, Plus, Pencil, Trash2, LayoutGrid, List } from 'lucide-react';
+import { vehicles as dummyVehicles } from '../data/dummyData';
+import { createVehicle, updateVehicle, deleteVehicle } from '../api/vehicles.api';
+import {
+  Modal, FormField, Input, Select, ErrorBanner,
+  ModalFooter, EmptyState, PageHeader, SearchBar, FuelBar,
+} from '../components/UI';
 
-// ── Semantic status config ────────────────────────────────────────
-const STATUS_CFG = {
-  'Available':  { cls: 'badge-teal',   dot: 'var(--dc-teal)',   label: 'Active'      },
-  'On Trip':    { cls: 'badge-blue',   dot: 'var(--dc-blue)',   label: 'En Route', pulse: true },
-  'In Shop':    { cls: 'badge-amber',  dot: 'var(--dc-amber)',  label: 'Maintenance' },
-  'Retired':    { cls: 'badge-gray',                            label: 'Retired'     },
+const STATUS_BADGE = {
+  'Available':   'badge-green',
+  'On Trip':     'badge-blue',
+  'Maintenance': 'badge-orange',
+  'In Shop':     'badge-orange',
+  'Retired':     'badge-gray',
 };
+const EMPTY = { registrationNumber:'', name:'', type:'Heavy Truck', maxLoadCapacity:'', odometer:'', acquisitionCost:'', status:'Available' };
 
-// ── Fuel bar ──────────────────────────────────────────────────────
-const FuelBar = ({ level = 75 }) => {
-  const pct   = Math.max(0, Math.min(100, level));
-  const color = pct > 50 ? 'var(--dc-teal)' : pct > 20 ? 'var(--dc-amber)' : 'var(--dc-red)';
-  return (
-    <div className="fuel-bar-wrap">
-      <div className="fuel-bar-track">
-        <div className="fuel-bar-fill" style={{ width: `${pct}%`, background: color }} />
+const VEHICLE_TYPES = ['Sedan', 'SUV', 'MPV', 'Pickup', 'Mini Truck', 'Heavy Truck', 'LCV'];
+
+const VehicleModal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
+  <Modal title={title} onClose={onClose}>
+    <form onSubmit={onSubmit}>
+      <ErrorBanner message={error} />
+      <div className="form-grid form-grid-2">
+        {[
+          { key:'registrationNumber', label:'Registration No.', placeholder:'MH12AB1234' },
+          { key:'name',               label:'Vehicle Model',    placeholder:'Tata Prima 4928' },
+          { key:'maxLoadCapacity',    label:'Max Load (kg)',    placeholder:'10000', type:'number' },
+          { key:'odometer',           label:'Odometer (km)',    placeholder:'0',     type:'number' },
+          { key:'acquisitionCost',    label:'Acquisition Cost (₹)', placeholder:'500000', type:'number' },
+        ].map(({ key, label, placeholder, type }) => (
+          <FormField key={key} label={label} required>
+            <Input type={type||'text'} placeholder={placeholder} value={form[key]}
+              onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} required />
+          </FormField>
+        ))}
+        <FormField label="Type" required>
+          <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} required>
+            {VEHICLE_TYPES.map(t => <option key={t}>{t}</option>)}
+          </Select>
+        </FormField>
+        <FormField label="Status">
+          <Select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
+            {['Available','On Trip','In Shop','Retired'].map(s => <option key={s}>{s}</option>)}
+          </Select>
+        </FormField>
       </div>
-      <span className="fuel-bar-label">{pct}%</span>
-    </div>
-  );
-};
+      <ModalFooter onClose={onClose} loading={loading} saveLabel="Save Vehicle" />
+    </form>
+  </Modal>
+);
 
-<<<<<<< HEAD
-const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => {
-  // Vehicle type capacity limits
-  const CAPACITY_LIMITS = {
-    'Auto Rickshaw': 500,
-    'Sedan': 200,
-    'MPV': 2000,
-    'SUV': 2500,
-    'Pickup': 3000,
-    'Tempo': 5000,
-    'Light Truck': 5000,
-    'Medium Truck': 10000,
-    'Heavy Truck': 25000,
-    'Trailer': 50000,
-  };
-
-  const checkCapacityWarning = () => {
-    const capacity = Number(form.maxLoadCapacity);
-    const typeKey = Object.keys(CAPACITY_LIMITS).find(k => 
-      form.type?.toLowerCase().includes(k.toLowerCase()) || 
-      k.toLowerCase().includes(form.type?.toLowerCase())
-    );
-    
-    if (typeKey && capacity > CAPACITY_LIMITS[typeKey]) {
-      return `Warning: ${capacity}kg exceeds typical capacity for ${form.type} (limit: ${CAPACITY_LIMITS[typeKey]}kg)`;
-    }
-    if (capacity > 100000) {
-      return 'Warning: Max load capacity seems unusually high (>100,000kg)';
-    }
-    return null;
-  };
-
-  const capacityWarning = checkCapacityWarning();
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
-      <div style={{ 
-        background: 'rgba(30, 36, 51, 0.95)',
-        backdropFilter: 'blur(12px)',
-        borderRadius: 14, 
-        width: '100%', 
-        maxWidth: 520, 
-        boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-        border: '1px solid rgba(76, 141, 255, 0.15)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid rgba(45, 53, 72, 0.6)' }}>
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#E2E8F0' }}>{title}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A7' }}><X size={18} /></button>
-        </div>
-        <form onSubmit={onSubmit} style={{ padding: 24 }}>
-          {error && <div className="alert alert-error"><AlertCircle size={14} />{error}</div>}
-          {capacityWarning && <div className="alert alert-info"><AlertCircle size={14} />{capacityWarning}</div>}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            {[
-              { key: 'registrationNumber', label: 'Registration Number', placeholder: 'e.g. MH12AB1234' },
-              { key: 'name', label: 'Vehicle Name', placeholder: 'e.g. Tata Prima 4928' },
-              { key: 'type', label: 'Type', placeholder: 'e.g. Heavy Truck' },
-              { key: 'maxLoadCapacity', label: 'Max Load Capacity (kg)', placeholder: '10000', type: 'number' },
-              { key: 'odometer', label: 'Odometer (km)', placeholder: '0', type: 'number' },
-              { key: 'acquisitionCost', label: 'Acquisition Cost', placeholder: '500000', type: 'number' },
-            ].map(({ key, label, placeholder, type }) => (
-              <div className="form-group" style={{ marginBottom: 0 }} key={key}>
-                <label className="form-label" style={{ color: '#C4CEDC' }}>{label}</label>
-                <input 
-                  className="form-control" 
-                  style={{
-                    background: 'rgba(26, 31, 46, 0.8)',
-                    borderColor: 'rgba(45, 53, 72, 0.6)',
-                    color: '#E2E8F0',
-                  }}
-                  type={type || 'text'} 
-                  placeholder={placeholder}
-                  value={form[key]} 
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} 
-                  required 
-                />
-              </div>
-            ))}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ color: '#C4CEDC' }}>Status</label>
-              <select 
-                className="form-control"
-                style={{
-                  background: 'rgba(26, 31, 46, 0.8)',
-                  borderColor: 'rgba(45, 53, 72, 0.6)',
-                  color: '#E2E8F0',
-                }}
-                value={form.status} 
-                onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-              >
-                {['Available', 'On Trip', 'In Shop', 'Retired'].map(s => <option key={s}>{s}</option>)}
-              </select>
-=======
-// ── Driver avatar chip ────────────────────────────────────────────
-const DriverChip = ({ driver }) => {
-  if (!driver?.name) return <span className="driver-chip-unassigned">Unassigned</span>;
-  const initials = driver.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  return (
-    <span className="driver-chip">
-      <span className="driver-chip-avatar">{initials}</span>
-      <span className="driver-chip-name">{driver.name}</span>
-    </span>
-  );
-};
-
-// ── Status badge (semantic) ────────────────────────────────────────
-const StatusBadge = ({ status }) => {
-  const cfg  = STATUS_CFG[status] ?? { cls: 'badge-gray', label: status };
-  return (
-    <span className={`badge ${cfg.cls}`} style={{ gap: 6 }}>
-      {cfg.dot && (
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%',
-          background: cfg.dot, flexShrink: 0,
-          animation: cfg.pulse ? 'live-pulse 1.6s ease-in-out infinite' : undefined,
-          display: 'inline-block',
-        }} />
-      )}
-      {cfg.label ?? status}
-    </span>
-  );
-};
-
-// ── Filter chips ──────────────────────────────────────────────────
-const FILTERS = ['All', 'Available', 'On Trip', 'In Shop', 'Retired'];
-
-const EMPTY_FORM = {
-  registrationNumber: '', name: '', type: '',
-  maxLoadCapacity: '', odometer: '', acquisitionCost: '', status: 'Available',
-};
-
-// ── Modal ─────────────────────────────────────────────────────────
-const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
-    <div style={{ background: 'var(--surface)', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--border)' }}>
-        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: "'Space Grotesk',sans-serif" }}>{title}</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-500)' }}><X size={18} /></button>
-      </div>
-      <form onSubmit={onSubmit} style={{ padding: 24 }}>
-        {error && <div className="alert alert-error"><AlertCircle size={14} />{error}</div>}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          {[
-            { key: 'registrationNumber', label: 'Registration Number', placeholder: 'e.g. MH12AB1234' },
-            { key: 'name',               label: 'Vehicle Name',        placeholder: 'e.g. Tata Prima 4928' },
-            { key: 'type',               label: 'Type',                placeholder: 'e.g. Heavy Truck' },
-            { key: 'maxLoadCapacity',    label: 'Max Load (kg)',        placeholder: '10000', type: 'number' },
-            { key: 'odometer',           label: 'Odometer (km)',        placeholder: '0',     type: 'number' },
-            { key: 'acquisitionCost',    label: 'Acquisition Cost',     placeholder: '500000',type: 'number' },
-          ].map(({ key, label, placeholder, type }) => (
-            <div className="form-group" style={{ marginBottom: 0 }} key={key}>
-              <label className="form-label">{label}</label>
-              <input className="form-control" type={type || 'text'} placeholder={placeholder}
-                value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} required />
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading && <span className="spinner" />}{loading ? 'Saving…' : 'Save Vehicle'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// ── Page ──────────────────────────────────────────────────────────
 const Vehicles = () => {
-<<<<<<< HEAD
-  const [vehicles, setVehicles] = useState([]);
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState(
+    dummyVehicles.map(v => ({ ...v, _id: v.id, name: v.model, type: v.model.split(' ')[0], maxLoadCapacity: 10000, acquisitionCost: 0 }))
+  );
+  const [search, setSearch]       = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
-=======
-  const toast = useToast();
-  const [vehicles,   setVehicles]   = useState([]);
-  const [search,     setSearch]     = useState('');
-  const [filter,     setFilter]     = useState('All');
-  const [loading,    setLoading]    = useState(true);
-  const [modalOpen,  setModalOpen]  = useState(false);
-  const [editing,    setEditing]    = useState(null);
-  const [form,       setForm]       = useState(EMPTY_FORM);
-  const [saving,     setSaving]     = useState(false);
-  const [error,      setError]      = useState('');
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
+  const [editing, setEditing]     = useState(null);
+  const [form, setForm]           = useState(EMPTY);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState('');
+  const [viewMode, setViewMode]   = useState('table'); // 'table' or 'card'
 
-  const load = () => {
-    setLoading(true);
-    getVehicles().then(res => setVehicles(res.data)).catch(() => {}).finally(() => setLoading(false));
-  };
-  useEffect(() => { load(); }, []);
-
-  const openAdd = () => { setEditing(null); setForm(EMPTY_FORM); setError(''); setModalOpen(true); };
-  const openEdit = (v) => {
+  const openAdd = () => { setEditing(null); setForm(EMPTY); setError(''); setModalOpen(true); };
+  const openEdit = v => {
     setEditing(v._id);
-    setForm({ registrationNumber: v.registrationNumber, name: v.name, type: v.type, maxLoadCapacity: v.maxLoadCapacity, odometer: v.odometer, acquisitionCost: v.acquisitionCost, status: v.status });
+    setForm({ registrationNumber: v.registrationNumber, name: v.name, type: v.type,
+      maxLoadCapacity: v.maxLoadCapacity, odometer: v.odometer,
+      acquisitionCost: v.acquisitionCost, status: v.status });
     setError(''); setModalOpen(true);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault(); setError(''); setSaving(true);
     try {
       if (editing) {
         await updateVehicle(editing, form);
-        toast.success('Vehicle updated', form.registrationNumber);
+        setVehicles(vs => vs.map(v => v._id === editing ? { ...v, ...form } : v));
       } else {
-        await createVehicle(form);
-        toast.success('Vehicle added', form.registrationNumber);
+        const res = await createVehicle(form);
+        setVehicles(vs => [{ ...res.data, _id: res.data._id }, ...vs]);
       }
-      setModalOpen(false); load();
-    } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to save vehicle.';
-      setError(msg);
-      toast.error('Save failed', msg);
-    } finally { setSaving(false); }
+      setModalOpen(false);
+    } catch (err) { setError(err.response?.data?.message || 'Failed to save vehicle.'); }
+    finally { setSaving(false); }
   };
 
-  const handleDelete = async (v) => {
-    if (!window.confirm(`Delete ${v.registrationNumber}?`)) return;
-    try {
-      await deleteVehicle(v._id);
-      toast.warning('Vehicle removed', v.registrationNumber);
-      load();
-    } catch (err) {
-      toast.error('Delete failed', err.response?.data?.message || 'Could not delete vehicle.');
-    }
+  const handleDelete = async id => {
+    if (!window.confirm('Delete this vehicle?')) return;
+    try { await deleteVehicle(id); setVehicles(vs => vs.filter(v => v._id !== id)); }
+    catch (err) { alert(err.response?.data?.message || 'Delete failed'); }
   };
 
-  // counts per status for chips
-  const counts = FILTERS.reduce((acc, f) => {
-    acc[f] = f === 'All' ? vehicles.length : vehicles.filter(v => v.status === f).length;
-    return acc;
-  }, {});
-
-  const filtered = vehicles.filter(v => {
-    const matchesFilter = filter === 'All' || v.status === filter;
-    const matchesSearch =
-      v.registrationNumber?.toLowerCase().includes(search.toLowerCase()) ||
-      v.name?.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const filtered = vehicles.filter(v =>
+    v.registrationNumber?.toLowerCase().includes(search.toLowerCase()) ||
+    v.name?.toLowerCase().includes(search.toLowerCase()) ||
+    v.driver?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    // --page-accent = blue (vehicles = core registry, stays brand blue)
-    <div style={{ '--page-accent': 'var(--dc-blue)', '--page-accent-bg': 'var(--dc-blue-bg)' }}>
+    <>
       {modalOpen && (
-        <Modal
-          title={editing ? 'Edit Vehicle' : 'Add Vehicle'}
-          onClose={() => setModalOpen(false)}
-          onSubmit={handleSubmit}
-          form={form} setForm={setForm}
-          loading={saving} error={error}
-        />
+        <VehicleModal title={editing ? 'Edit Vehicle' : 'Add Vehicle'}
+          onClose={() => setModalOpen(false)} onSubmit={handleSubmit}
+          form={form} setForm={setForm} loading={saving} error={error} />
       )}
 
-      <div className="page-header">
-        <div className="page-header-left">
-          <h1>Vehicles</h1>
-          <p>
-            {vehicles.length} total &nbsp;·&nbsp;
-            {vehicles.filter(v => v.status === 'Available').length} available &nbsp;·&nbsp;
-            {vehicles.filter(v => v.status === 'On Trip').length} on trip
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={openAdd}>
-          <Plus size={15} strokeWidth={2.5} />Add Vehicle
-        </button>
-      </div>
+      <PageHeader title="Vehicles" subtitle={`Managing a fleet of ${vehicles.length} vehicles`}
+        action={<div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', background: 'var(--dc-panel)', border: '1px solid var(--dc-line)', borderRadius: 8, padding: 4 }}>
+            <button onClick={() => setViewMode('table')} title="Table view"
+              style={{ padding: '6px 10px', background: viewMode === 'table' ? 'rgba(37, 99, 235, 0.15)' : 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', color: viewMode === 'table' ? 'var(--dc-blue)' : 'var(--dc-text-dim)', transition: 'all 0.2s' }}>
+              <List size={16} strokeWidth={2} />
+            </button>
+            <button onClick={() => setViewMode('card')} title="Card view"
+              style={{ padding: '6px 10px', background: viewMode === 'card' ? 'rgba(37, 99, 235, 0.15)' : 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer', color: viewMode === 'card' ? 'var(--dc-blue)' : 'var(--dc-text-dim)', transition: 'all 0.2s' }}>
+              <LayoutGrid size={16} strokeWidth={2} />
+            </button>
+          </div>
+          <button className="btn btn-primary" onClick={openAdd}><Plus size={15} strokeWidth={2.5}/>Add Vehicle</button>
+        </div>} />
 
       <div className="card">
-        {/* ── Filter chips + search row ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div className="filter-chips" style={{ padding: 0, border: 'none', gap: 6 }}>
-            {FILTERS.map(f => (
-              <button
-                key={f}
-                className={`chip${filter === f ? ' active' : ''}`}
-                onClick={() => setFilter(f)}
-              >
-                {f}
-                <span className="chip-count">({counts[f]})</span>
-              </button>
-            ))}
-          </div>
-          <div className="search-bar">
-            <span className="search-bar-icon"><Search size={14} /></span>
-            <input type="text" placeholder="Search vehicles…" value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-            <button 
-              className={`btn btn-sm ${viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setViewMode('grid')}
-              title="Grid view"
-            >
-              <Grid3x3 size={14} strokeWidth={2} />
-            </button>
-            <button 
-              className={`btn btn-sm ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setViewMode('table')}
-              title="List view"
-            >
-              <List size={14} strokeWidth={2} />
-            </button>
-          </div>
+        <div className="card-header">
+          <span className="card-title">All Vehicles <span style={{ color:'var(--dc-text-faint)', fontWeight:400 }}>({filtered.length})</span></span>
+          <SearchBar value={search} onChange={setSearch} placeholder="Search reg, model, driver…" />
         </div>
-<<<<<<< HEAD
-        {viewMode === 'table' ? (
+
+        {/* TABLE VIEW */}
+        {viewMode === 'table' && (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Registration</th><th>Name</th><th>Type</th><th>Max Load (kg)</th><th>Odometer (km)</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</td></tr>
-                ) : filtered.length === 0 ? (
-                  <tr><td colSpan={7}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon"><Truck size={22} strokeWidth={1.5} /></div>
-                      <h3>No vehicles found</h3>
-                      <p>Add your first vehicle to start managing your fleet.</p>
-                      <button className="btn btn-primary" onClick={openAdd}><Plus size={14} />Add Vehicle</button>
-=======
-
-        {/* ── Table ── */}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Registration</th>
-                <th>Name / Type</th>
-                <th>Driver</th>
-                <th>Odometer</th>
-                <th>Fuel</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+              <thead>
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-                    Loading vehicles...
-                  </td>
+                  <th>Reg. Number</th><th>Model</th><th>Max Load (kg)</th><th>Acquisition Cost</th><th>Driver</th>
+                  <th>Location</th><th>Odometer</th><th>Fuel</th>
+                  <th>Status</th><th style={{ textAlign:'right' }}>Actions</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7}>
-                  <div className="empty-state">
-                    <div className="empty-state-icon"><Truck size={22} strokeWidth={1.5} /></div>
-                    <h3>No vehicles found</h3>
-                    <p>Add your first vehicle to start managing your fleet.</p>
-                    <button className="btn btn-primary" onClick={openAdd}><Plus size={14} />Add Vehicle</button>
-                  </div>
-                </td></tr>
-              ) : filtered.map(v => (
-                <tr key={v._id}>
-                  <td className="td-primary" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
-                    {v.registrationNumber}
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--dc-text)', fontSize: 13 }}>{v.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.5px', textTransform: 'uppercase' }}>{v.type}</div>
-                  </td>
-                  <td><DriverChip driver={v.driver} /></td>
-                  <td style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>
-                    {Number(v.odometer).toLocaleString()} km
-                  </td>
-                  <td><FuelBar level={v.fuelLevel ?? 75} /></td>
-                  <td><StatusBadge status={v.status} /></td>
-                  <td>
-                    <div className="row-actions" style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(v)} title="Edit"><Pencil size={13} /></button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(v)} title="Delete" style={{ color: 'var(--dc-red)' }}><Trash2 size={13} /></button>
->>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
-                    </div>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={10}>
+                    <EmptyState icon={Truck} title="No vehicles found"
+                      description="Add your first vehicle to start managing your fleet."
+                      action={<button className="btn btn-primary" onClick={openAdd}><Plus size={14}/>Add Vehicle</button>} />
                   </td></tr>
                 ) : filtered.map(v => (
-                  <tr key={v._id}>
-                    <td className="td-primary">{v.registrationNumber}</td>
-                    <td>{v.name}</td>
-                    <td>{v.type}</td>
-                    <td>{Number(v.maxLoadCapacity).toLocaleString()}</td>
-                    <td>{Number(v.odometer).toLocaleString()}</td>
-                    <td><span className={`badge ${STATUS_BADGE[v.status] ?? 'badge-gray'}`}>{v.status}</span></td>
+                  <tr key={v._id||v.id}>
+                    <td><span className="td-primary">{v.registrationNumber}</span></td>
+                    <td style={{ color:'var(--dc-text)', fontWeight:500 }}>{v.model||v.name}</td>
+                    <td style={{ fontSize:12, fontFamily:'monospace' }}>{Number(v.maxLoadCapacity||10000).toLocaleString()}</td>
+                    <td style={{ fontSize:12, color:'var(--dc-text-dim)' }}>₹{Number(v.acquisitionCost||0).toLocaleString()}</td>
+                    <td style={{ color:'var(--dc-text-dim)', fontSize:12 }}>{v.status === 'On Trip' ? (v.driver||'—') : '—'}</td>
+                    <td style={{ color:'var(--dc-text-faint)', fontSize:12 }}>{v.location||'—'}</td>
+                    <td style={{ fontFamily:'monospace', fontSize:12 }}>{Number(v.odometer).toLocaleString()} km</td>
+                    <td><FuelBar level={v.fuelLevel} /></td>
+                    <td><span className={`badge ${STATUS_BADGE[v.status]??'badge-gray'}`}>{v.status}</span></td>
                     <td>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <button className="btn btn-ghost btn-sm" onClick={() => openEdit(v)} title="Edit"><Pencil size={13} /></button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(v._id)} title="Delete" style={{ color: 'var(--danger)' }}><Trash2 size={13} /></button>
+                      <div className="row-actions" style={{ display:'flex', gap:4, justifyContent:'flex-end' }}>
+                        <button className="btn btn-ghost btn-sm hoverable" onClick={() => openEdit({ ...v, _id:v.id })} title="Edit"><Pencil size={13}/></button>
+                        <button className="btn btn-ghost btn-sm hoverable" onClick={() => handleDelete(v._id||v.id)} title="Delete" style={{ color:'var(--dc-red)' }}><Trash2 size={13}/></button>
                       </div>
                     </td>
                   </tr>
@@ -431,71 +168,73 @@ const Vehicles = () => {
               </tbody>
             </table>
           </div>
-        ) : (
-          <div style={{ padding: '20px' }}>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</div>
-            ) : filtered.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon"><Truck size={22} strokeWidth={1.5} /></div>
-                <h3>No vehicles found</h3>
-                <p>Add your first vehicle to start managing your fleet.</p>
-                <button className="btn btn-primary" onClick={openAdd}><Plus size={14} />Add Vehicle</button>
-              </div>
+        )}
+
+        {/* CARD VIEW */}
+        {viewMode === 'card' && (
+          <div className="card-body">
+            {filtered.length === 0 ? (
+              <EmptyState icon={Truck} title="No vehicles found"
+                description="Add your first vehicle to start managing your fleet."
+                action={<button className="btn btn-primary" onClick={openAdd}><Plus size={14}/>Add Vehicle</button>} />
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                 {filtered.map(v => (
-                  <div key={v._id} style={{
-                    background: 'rgba(255, 255, 255, 0.85)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(226, 232, 240, 0.6)',
-                    borderRadius: 'var(--radius-lg)',
+                  <div key={v._id||v.id} style={{
+                    background: 'var(--dc-panel)',
+                    border: '1px solid var(--dc-line)',
+                    borderRadius: 12,
                     padding: 16,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+                    transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
                     cursor: 'pointer',
-                    ':hover': { transform: 'translateY(-2px)', boxShadow: '0 8px 16px rgba(37,99,235,0.12)' }
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(37,99,235,0.12)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 12px 28px rgba(37, 99, 235, 0.15), 0 8px 16px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
                   }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{v.registrationNumber}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>{v.name}</div>
-                      </div>
-                      <span className={`badge ${STATUS_BADGE[v.status] ?? 'badge-gray'}`}>{v.status}</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+                    e.currentTarget.style.borderColor = 'var(--dc-line)';
+                  }}>
+                    {/* Header: Reg Number & Status Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                       <div>
-                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Type</div>
-                        <div style={{ marginTop: 3, color: 'var(--text)' }}>{v.type}</div>
+                        <div style={{ fontSize: 11, color: 'var(--dc-text-faint)', fontFamily: 'monospace', letterSpacing: '0.5px' }}>REG NUMBER</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dc-text)', fontFamily: 'monospace', marginTop: 2 }}>{v.registrationNumber}</div>
+                      </div>
+                      <span className={`badge ${STATUS_BADGE[v.status]??'badge-gray'}`} style={{ fontSize: 10 }}>{v.status}</span>
+                    </div>
+
+                    {/* Model */}
+                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--dc-text)', marginBottom: 12 }}>{v.model||v.name}</div>
+
+                    {/* Fuel Bar */}
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, color: 'var(--dc-text-faint)', marginBottom: 4 }}>Fuel Level</div>
+                      <FuelBar level={v.fuelLevel} />
+                    </div>
+
+                    {/* Details Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12, paddingTop: 12, borderTop: '1px solid var(--dc-line)' }}>
+                      <div>
+                        <div style={{ fontSize: 10, color: 'var(--dc-text-faint)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Odometer</div>
+                        <div style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--dc-text-dim)', marginTop: 2 }}>{Number(v.odometer).toLocaleString()} km</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Load Capacity</div>
-                        <div style={{ marginTop: 3, color: 'var(--text)' }}>{Number(v.maxLoadCapacity).toLocaleString()} kg</div>
+                        <div style={{ fontSize: 10, color: 'var(--dc-text-faint)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>Location</div>
+                        <div style={{ fontSize: 12, color: 'var(--dc-text-dim)', marginTop: 2 }}>{v.location||'—'}</div>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12, color: 'var(--text-muted)' }}>
-                      <div>
-                        <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Odometer</div>
-                        <div style={{ marginTop: 3, color: 'var(--text)' }}>{Number(v.odometer).toLocaleString()} km</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 8, borderTop: '1px solid rgba(226,232,240,0.4)' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(v)} style={{ flex: 1 }}>
-                        <Pencil size={13} />Edit
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit({ ...v, _id:v.id })} title="Edit" style={{ flex: 1 }}>
+                        <Pencil size={13}/> Edit
                       </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(v._id)} style={{ flex: 1, color: 'var(--danger)' }}>
-                        <Trash2 size={13} />
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(v._id||v.id)} title="Delete" style={{ flex: 1, color: 'var(--dc-red)' }}>
+                        <Trash2 size={13}/> Delete
                       </button>
                     </div>
                   </div>
@@ -505,8 +244,7 @@ const Vehicles = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
-
 export default Vehicles;

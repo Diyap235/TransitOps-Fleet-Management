@@ -115,6 +115,8 @@ const Dashboard = () => {
     }).finally(() => setLoading(false));
   }, []);
 
+  const dataLoadFailed = !loading && [stats.vehicles, stats.drivers, stats.trips, stats.maintenance].every(val => val === '—');
+
   // Build STATS array with live values for StatCard
   const STATS = [
     { label: 'Total Vehicles',    value: stats.vehicles,    icon: Truck,     accentVar: '--dc-blue',   bgVar: '--dc-blue-bg'   },
@@ -158,6 +160,16 @@ const Dashboard = () => {
           {STATS.map(s => <StatCard key={s.label} {...s} />)}
         </div>
       </div>
+
+      {dataLoadFailed && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="empty-state">
+            <div className="empty-state-icon"><BarChart3 size={22} strokeWidth={1.5} /></div>
+            <h3>No analytics data available</h3>
+            <p>Sync your fleet data to see live dashboard metrics and activity.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Quick actions ── */}
       <div className="card" style={{ marginBottom: 20 }}>

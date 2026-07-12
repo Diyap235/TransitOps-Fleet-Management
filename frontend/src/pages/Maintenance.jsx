@@ -177,7 +177,12 @@ const Maintenance = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</td></tr>
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                    Loading maintenance records...
+                  </td>
+                </tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={6}>
                   <div className="empty-state">

@@ -1,4 +1,3 @@
-import DriverModal from "../components/DriverModal";
 import React, { useEffect, useState } from 'react';
 import { UserRound, Plus, Pencil, Trash2, Search, X, AlertCircle } from 'lucide-react';
 import { getDrivers, createDriver, updateDriver, deleteDriver } from '../api/drivers.api';

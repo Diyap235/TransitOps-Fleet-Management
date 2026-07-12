@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Truck, UserRound, Route,
   Wrench, BarChart3, LogOut, Bell, Truck as TruckIcon,
+  Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const NAV = [
   { to: '/',            label: 'Dashboard',   Icon: LayoutDashboard },
@@ -26,8 +28,17 @@ const PAGE_TITLES = {
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Live clock — ticks every second, cleaned up on unmount
+  const fmt = () => new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const [clock, setClock] = useState(fmt);
+  useEffect(() => {
+    const id = setInterval(() => setClock(fmt()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -98,6 +109,20 @@ const Layout = ({ children }) => {
             <span className="topbar-title">{pageTitle}</span>
           </div>
           <div className="topbar-right">
+            <div className="clock-pill">
+              <span className="clock-dot" />
+              {clock}
+            </div>
+            <button
+              className="topbar-icon-btn"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark'
+                ? <Sun  size={17} strokeWidth={2} />
+                : <Moon size={17} strokeWidth={2} />}
+            </button>
             <button className="topbar-icon-btn" title="Notifications">
               <Bell size={17} strokeWidth={2} />
             </button>

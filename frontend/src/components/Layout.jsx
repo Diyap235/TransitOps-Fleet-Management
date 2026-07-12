@@ -123,8 +123,23 @@ const LayoutInner = ({ children }) => {
             </button>
           </div>
           <div className="topbar-right">
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px', marginRight: 4 }}>
-              {clock}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              background: '#0F172A', border: '1px solid #1E293B',
+              borderRadius: 99, padding: '5px 14px',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {/* Green pulsing dot */}
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#10B981', flexShrink: 0,
+                boxShadow: '0 0 0 0 rgba(16,185,129,0.6)',
+                animation: 'pulse-green 2s infinite',
+                display: 'inline-block',
+              }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#F1F5F9', letterSpacing: '1px' }}>
+                {clock}
+              </span>
             </div>
             <button
               className="topbar-icon-btn"

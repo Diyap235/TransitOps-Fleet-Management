@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Truck, UserRound, Route,
-  Wrench, BarChart3, LogOut, Bell,
-  Truck as TruckIcon, Moon, Sun,
+  Wrench, BarChart3, LogOut, Bell, Truck as TruckIcon,
+  Moon, Sun, Search,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { ToastProvider, ToastContainer } from '../context/ToastContext';
+import CommandPalette from './CommandPalette';
 
 const NAV = [
   { to: '/',            label: 'Dashboard',   Icon: LayoutDashboard },
@@ -26,12 +28,14 @@ const PAGE_TITLES = {
   '/reports':     'Reports',
 };
 
-const Layout = ({ children }) => {
+const LayoutInner = ({ children }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate  = useNavigate();
   const location  = useLocation();
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
+  // Live clock
   const fmt = () => new Date().toLocaleTimeString('en-GB', { hour12: false });
   const [clock, setClock] = useState(fmt);
   useEffect(() => {
@@ -39,7 +43,21 @@ const Layout = ({ children }) => {
     return () => clearInterval(id);
   }, []);
 
-  const initials  = user?.name
+  // ⌘K / Ctrl+K global shortcut
+  const openPalette  = useCallback(() => setPaletteOpen(true),  []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(p => !p);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
   const pageTitle = PAGE_TITLES[location.pathname] ?? 'TransitOps';
@@ -48,6 +66,13 @@ const Layout = ({ children }) => {
 
   return (
     <div className="app-layout">
+      {/* ── Command Palette ── */}
+      <CommandPalette open={paletteOpen} onClose={closePalette} />
+
+      {/* ── Toast stack ── */}
+      <ToastContainer />
+
+      {/* ── Sidebar ── */}
       <aside className="sidebar">
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
@@ -85,10 +110,17 @@ const Layout = ({ children }) => {
         </div>
       </aside>
 
+      {/* ── Main ── */}
       <div className="main-content">
         <header className="topbar">
-          <div className="topbar-left">
+          <div className="topbar-left" style={{ gap: 12 }}>
             <span className="topbar-title">{pageTitle}</span>
+            {/* ⌘K search trigger */}
+            <button className="cmd-trigger-btn" onClick={openPalette} title="Search or jump to… (⌘K)">
+              <Search size={13} strokeWidth={2} />
+              Search or jump to…
+              <kbd>⌘K</kbd>
+            </button>
           </div>
           <div className="topbar-right">
             <div style={{ fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px', marginRight: 4 }}>
@@ -111,5 +143,12 @@ const Layout = ({ children }) => {
     </div>
   );
 };
+
+// Wrap LayoutInner in ToastProvider so every page can call useToast()
+const Layout = ({ children }) => (
+  <ToastProvider>
+    <LayoutInner>{children}</LayoutInner>
+  </ToastProvider>
+);
 
 export default Layout;

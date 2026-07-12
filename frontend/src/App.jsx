@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
@@ -37,6 +38,7 @@ const App = () => (
   <BrowserRouter>
     <ThemeProvider>
       <AuthProvider>
+        <Toaster position="top-right" />
         <AppRoutes />
       </AuthProvider>
     </ThemeProvider>

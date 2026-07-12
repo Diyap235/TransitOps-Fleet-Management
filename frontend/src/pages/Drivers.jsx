@@ -187,7 +187,12 @@ const Drivers = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</td></tr>
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                    Loading drivers...
+                  </td>
+                </tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={8}>
                   <div className="empty-state">

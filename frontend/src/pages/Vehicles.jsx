@@ -239,7 +239,12 @@ const Vehicles = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading…</td></tr>
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                    Loading vehicles...
+                  </td>
+                </tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan={7}>
                   <div className="empty-state">

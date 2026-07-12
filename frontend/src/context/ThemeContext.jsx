@@ -6,7 +6,7 @@ const STORAGE_KEY = 'transitops_theme';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) || 'light';
+    return localStorage.getItem(STORAGE_KEY) || 'dark';
   });
 
   useEffect(() => {

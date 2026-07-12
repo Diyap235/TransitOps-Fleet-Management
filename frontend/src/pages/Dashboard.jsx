@@ -1,165 +1,183 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, UserRound, Route, Wrench, BarChart3 } from 'lucide-react';
+import { Truck, UserRound, Route, Wrench, BarChart3, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import {
-  dashboardStats, trips, maintenanceRecords,
-} from '../data/dummyData';
-
-const COLOR_MAP = {
-  blue:   { icon: '#2563EB', bg: '#EFF6FF' },
-  green:  { icon: '#16A34A', bg: '#F0FDF4' },
-  orange: { icon: '#D97706', bg: '#FFFBEB' },
-  red:    { icon: '#DC2626', bg: '#FEF2F2' },
-  purple: { icon: '#7C3AED', bg: '#F5F3FF' },
-};
+import { dashboardStats, trips, maintenanceRecords } from '../data/dummyData';
 
 const TRIP_STATUS_COLOR = {
-  Dispatched: { bg: '#DBEAFE', color: '#1D4ED8' },
-  Completed:  { bg: '#DCFCE7', color: '#15803D' },
-  Cancelled:  { bg: '#FEE2E2', color: '#B91C1C' },
-  Draft:      { bg: '#F1F5F9', color: '#475569' },
+  Dispatched: { bg: 'rgba(76,141,255,0.15)',  color: '#60A5FA' },
+  Completed:  { bg: 'rgba(47,212,168,0.15)',  color: '#2FD4A8' },
+  Cancelled:  { bg: 'rgba(251,91,75,0.15)',   color: '#FB5B4B' },
+  Draft:      { bg: 'rgba(107,90,224,0.12)',  color: '#9C8CFF' },
 };
 
 const MAINT_PRIORITY_COLOR = {
-  High:   { bg: '#FEE2E2', color: '#B91C1C' },
-  Medium: { bg: '#FEF3C7', color: '#B45309' },
-  Low:    { bg: '#DCFCE7', color: '#15803D' },
+  High:   { bg: 'rgba(251,91,75,0.15)',   color: '#FB5B4B' },
+  Medium: { bg: 'rgba(245,166,35,0.15)',  color: '#F5A623' },
+  Low:    { bg: 'rgba(47,212,168,0.15)',  color: '#2FD4A8' },
 };
 
-const QUICK = [
-  { to: '/vehicles',    label: 'Vehicles',    Icon: Truck,     color: 'blue'   },
-  { to: '/drivers',     label: 'Drivers',     Icon: UserRound, color: 'purple' },
-  { to: '/trips',       label: 'Trips',       Icon: Route,     color: 'green'  },
-  { to: '/maintenance', label: 'Maintenance', Icon: Wrench,    color: 'orange' },
-  { to: '/reports',     label: 'Reports',     Icon: BarChart3, color: 'red'    },
+const STAT_CARDS = [
+  { label: 'Total Vehicles',    caption: 'FLEET REGISTRY', key: 'totalVehicles',    Icon: Truck,     accent: 'var(--dc-blue)',   accentBg: 'var(--dc-blue-bg)'   },
+  { label: 'Active Trips',      caption: 'ROUTE LOG',      key: 'activeTrips',      Icon: Route,     accent: 'var(--dc-teal)',   accentBg: 'var(--dc-teal-bg)'   },
+  { label: 'Drivers Available', caption: 'CREW ROSTER',    key: 'driversAvailable', Icon: UserRound, accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
+  { label: 'Open Maintenance',  caption: 'SERVICE DESK',   key: 'openMaintenance',  Icon: Wrench,    accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
 ];
+
+const QUICK_ACTIONS = [
+  { to: '/vehicles',    label: 'Vehicles',    sub: 'FLEET REGISTRY', Icon: Truck,     accent: 'var(--dc-blue)',   accentBg: 'var(--dc-blue-bg)'   },
+  { to: '/drivers',     label: 'Drivers',     sub: 'CREW ROSTER',    Icon: UserRound, accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
+  { to: '/trips',       label: 'Trips',       sub: 'ROUTE LOG',      Icon: Route,     accent: 'var(--dc-teal)',   accentBg: 'var(--dc-teal-bg)'   },
+  { to: '/maintenance', label: 'Maintenance', sub: 'SERVICE DESK',   Icon: Wrench,    accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
+  { to: '/reports',     label: 'Reports',     sub: 'ANALYTICS',      Icon: BarChart3, accent: 'var(--dc-reports)',accentBg: 'var(--dc-reports-bg)'},
+];
+
+const recentTrips = trips.slice(0, 5);
+const recentMaint = maintenanceRecords.slice(0, 5);
 
 const Dashboard = () => {
   const { user } = useAuth();
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  const STAT_CARDS = [
-    { label: 'Total Vehicles',    value: dashboardStats.totalVehicles,    Icon: Truck,     color: 'blue'   },
-    { label: 'Active Trips',      value: dashboardStats.activeTrips,      Icon: Route,     color: 'green'  },
-    { label: 'Drivers Available', value: dashboardStats.driversAvailable, Icon: UserRound, color: 'purple' },
-    { label: 'Open Maintenance',  value: dashboardStats.openMaintenance,  Icon: Wrench,    color: 'orange' },
-  ];
-
-  const recentTrips = trips.slice(0, 5);
-  const recentMaint = maintenanceRecords.slice(0, 5);
-
   return (
     <>
+      {/* ── Header ── */}
       <div className="page-header">
         <div className="page-header-left">
-          <h1>{greeting}, {user?.name?.split(' ')[0] ?? 'there'}</h1>
+          <h1 className="font-grotesk">{greeting}, {user?.name?.split(' ')[0] ?? 'there'}</h1>
           <p>Here is what is happening with your fleet today.</p>
+        </div>
+        <span className="live-badge"><span className="live-badge-dot" />LIVE</span>
+      </div>
+
+      {/* ── DC Stat cards with animated connector rail ── */}
+      <div className="dc-connector-wrap" style={{ marginBottom: 24 }}>
+        <svg className="dc-connector-svg" viewBox="0 0 100 1" preserveAspectRatio="none">
+          <line className="dc-connector-line" x1="0" y1="0.5" x2="100" y2="0.5" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <div className="stats-grid">
+          {STAT_CARDS.map(({ label, caption, key, Icon, accent, accentBg }) => (
+            <div
+              className="dc-stat-card"
+              key={key}
+              style={{ '--dc-accent': accent, '--dc-accent-bg': accentBg }}
+            >
+              <span className="dc-stat-dot" style={{ background: accent, boxShadow: `0 0 0 3px ${accentBg}` }} />
+              <div className="dc-icon-chip" style={{ background: accentBg, color: accent }}>
+                <Icon size={17} strokeWidth={2} />
+              </div>
+              <div className="dc-stat-value font-mono">{dashboardStats[key]}</div>
+              <div className="dc-stat-label">{label}</div>
+              <div className="dc-stat-caption">{caption}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── Stat cards ── */}
-      <div className="stats-grid">
-        {STAT_CARDS.map(({ label, value, Icon, color }) => {
-          const c = COLOR_MAP[color];
-          return (
-            <div className="stat-card" key={label}>
-              <div className="stat-card-header">
-                <div className="stat-card-icon" style={{ background: c.bg, color: c.icon }}>
-                  <Icon size={18} strokeWidth={2} />
-                </div>
-              </div>
-              <div className="stat-card-value">{value}</div>
-              <div className="stat-card-label">{label}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Quick actions ── */}
+      {/* ── Quick Actions ── */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-header"><span className="card-title">Quick Actions</span></div>
+        <div className="card-header">
+          <span className="card-title font-grotesk">Quick Actions</span>
+        </div>
         <div className="card-body">
-          <div className="quick-action-grid">
-            {QUICK.map(({ to, label, Icon, color }) => {
-              const c = COLOR_MAP[color];
-              return (
-                <Link key={to} to={to} className="quick-action-card">
-                  <div className="quick-action-icon" style={{ background: c.bg, color: c.icon }}>
-                    <Icon size={17} strokeWidth={2} />
-                  </div>
-                  <span className="quick-action-label">{label}</span>
-                </Link>
-              );
-            })}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            {QUICK_ACTIONS.map(({ to, label, sub, Icon, accent, accentBg }) => (
+              <Link
+                key={to}
+                to={to}
+                className="dc-quick-card"
+                style={{ '--dc-card-accent': accent, '--dc-card-accent-bg': accentBg, textDecoration: 'none' }}
+              >
+                <div className="dc-quick-icon" style={{ background: accentBg, color: accent }}>
+                  <Icon size={16} strokeWidth={2} />
+                </div>
+                <span className="dc-quick-label">{label}</span>
+                <span className="dc-quick-sub">{sub}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── Recent activity ── */}
+      {/* ── Recent Activity ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
         {/* Recent Trips */}
-        <div className="card">
+        <div className="card" style={{ marginBottom: 0 }}>
           <div className="card-header">
-            <span className="card-title">Recent Trips</span>
-            <Link to="/trips" style={{ fontSize: 12, color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>View all</Link>
+            <span className="card-title font-grotesk">Recent Trips</span>
+            <Link to="/trips" style={{ fontSize: 12, color: 'var(--dc-blue)', textDecoration: 'none', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>
+              VIEW ALL →
+            </Link>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Route</th><th>Driver</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {recentTrips.map(t => {
-                  const sc = TRIP_STATUS_COLOR[t.status] ?? { bg: '#F1F5F9', color: '#475569' };
-                  return (
-                    <tr key={t.tripId}>
-                      <td className="td-primary" style={{ fontSize: 12 }}>{t.source} → {t.destination}</td>
-                      <td style={{ fontSize: 12, color: '#6B7280' }}>{t.driver}</td>
-                      <td>
-                        <span style={{ background: sc.bg, color: sc.color, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
-                          {t.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {recentTrips.length === 0 ? (
+            <div className="dc-radar-wrap">
+              <div className="dc-radar-ring"><Activity size={22} strokeWidth={1.5} /></div>
+              <h3>No activity yet</h3>
+              <p>Recent trips will appear here once dispatched.</p>
+            </div>
+          ) : (
+            <div className="activity-feed">
+              {recentTrips.map(t => {
+                const sc = TRIP_STATUS_COLOR[t.status] ?? { bg: 'rgba(107,90,224,0.12)', color: '#9C8CFF' };
+                return (
+                  <div className="activity-row" key={t.tripId}>
+                    <span className="activity-dot" style={{ background: sc.color }} />
+                    <div className="activity-text">
+                      <strong>{t.source} → {t.destination}</strong>
+                      <div style={{ fontSize: 12, color: 'var(--dc-text-faint)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                        {t.driver} · {t.vehicle}
+                      </div>
+                    </div>
+                    <span style={{ background: sc.bg, color: sc.color, padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.8px', whiteSpace: 'nowrap' }}>
+                      {t.status.toUpperCase()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Recent Maintenance */}
-        <div className="card">
+        {/* Maintenance Alerts */}
+        <div className="card" style={{ marginBottom: 0 }}>
           <div className="card-header">
-            <span className="card-title">Maintenance Alerts</span>
-            <Link to="/maintenance" style={{ fontSize: 12, color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>View all</Link>
+            <span className="card-title font-grotesk">Maintenance Alerts</span>
+            <Link to="/maintenance" style={{ fontSize: 12, color: 'var(--dc-red)', textDecoration: 'none', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>
+              VIEW ALL →
+            </Link>
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>Vehicle</th><th>Issue</th><th>Priority</th></tr>
-              </thead>
-              <tbody>
-                {recentMaint.map(r => {
-                  const pc = MAINT_PRIORITY_COLOR[r.priority] ?? { bg: '#F1F5F9', color: '#475569' };
-                  return (
-                    <tr key={r.id}>
-                      <td className="td-primary" style={{ fontSize: 12 }}>{r.vehicle}</td>
-                      <td style={{ fontSize: 12, color: '#6B7280', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.issue}</td>
-                      <td>
-                        <span style={{ background: pc.bg, color: pc.color, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
-                          {r.priority}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {recentMaint.length === 0 ? (
+            <div className="dc-radar-wrap">
+              <div className="dc-radar-ring"><Wrench size={22} strokeWidth={1.5} /></div>
+              <h3>All clear</h3>
+              <p>No pending maintenance alerts at this time.</p>
+            </div>
+          ) : (
+            <div className="activity-feed">
+              {recentMaint.map(r => {
+                const pc = MAINT_PRIORITY_COLOR[r.priority] ?? { bg: 'rgba(107,90,224,0.12)', color: '#9C8CFF' };
+                return (
+                  <div className="activity-row" key={r.id}>
+                    <span className="activity-dot" style={{ background: pc.color }} />
+                    <div className="activity-text">
+                      <strong>{r.vehicle}</strong>
+                      <div style={{ fontSize: 12, color: 'var(--dc-text-faint)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                        {r.issue}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                      <span style={{ background: pc.bg, color: pc.color, padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.8px' }}>
+                        {r.priority?.toUpperCase()}
+                      </span>
+                      <span className="activity-ts">{r.dueDate}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>

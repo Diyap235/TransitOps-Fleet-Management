@@ -1,3 +1,4 @@
+import DriverModal from "../components/DriverModal";
 import React, { useEffect, useState } from 'react';
 import { UserRound, Plus, Pencil, Trash2, Search } from 'lucide-react';
 // import { getDrivers } from '../api/drivers.api';
@@ -12,6 +13,7 @@ const STATUS_BADGE = {
 const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
   const [search, setSearch] = useState('');
+  const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
     // TODO: getDrivers().then(res => setDrivers(res.data));
@@ -30,7 +32,10 @@ const Drivers = () => {
           <h1>Drivers</h1>
           <p>Manage drivers, licenses, and safety scores.</p>
         </div>
-        <button className="btn btn-primary">
+        <button
+    className="btn btn-primary"
+    onClick={() => setOpenModal(true)}
+>
           <Plus size={15} strokeWidth={2.5} />
           Add Driver
         </button>
@@ -48,6 +53,10 @@ const Drivers = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <DriverModal
+    open={openModal}
+    onClose={() => setOpenModal(false)}
+/>
         </div>
 
         <div className="table-wrap">

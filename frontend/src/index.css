@@ -675,3 +675,199 @@ select.form-control { cursor: pointer; }
 .quick-action-label {
   font-size: 13px; font-weight: 600; color: var(--gray-800);
 }
+
+/* ═══════════════════════════════════════════════
+   DARK THEME  –  applied via [data-theme="dark"]
+   on <html>. Only semantic tokens are overridden;
+   brand colours (primary, success, warning, danger)
+   stay the same for both themes.
+   ═══════════════════════════════════════════════ */
+
+/* ── Smooth crossfade for every element ───────── */
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.25s cubic-bezier(0.4,0,0.2,1),
+    border-color     0.25s cubic-bezier(0.4,0,0.2,1),
+    color            0.25s cubic-bezier(0.4,0,0.2,1),
+    box-shadow       0.25s cubic-bezier(0.4,0,0.2,1);
+}
+/* Don't animate transforms (breaks hover lifts) */
+.btn, .stat-card, .quick-action-card, .sidebar-link {
+  transition:
+    background-color 0.25s cubic-bezier(0.4,0,0.2,1),
+    border-color     0.25s cubic-bezier(0.4,0,0.2,1),
+    color            0.25s cubic-bezier(0.4,0,0.2,1),
+    box-shadow       0.25s cubic-bezier(0.4,0,0.2,1),
+    transform        0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+[data-theme="dark"] {
+  /* ── Page surface & background ── */
+  --surface:        #1E2433;
+  --bg:             #151A27;
+
+  /* ── Borders ── */
+  --border:         #2D3548;
+
+  /* ── Text ── */
+  --text:           #E2E8F0;
+  --text-muted:     #8B95A7;
+
+  /* ── Gray scale (light → dark reversal) ── */
+  --gray-50:        #1A1F2E;
+  --gray-100:       #222840;
+  --gray-200:       #2D3548;
+  --gray-300:       #3D4660;
+  --gray-400:       #6B7280;
+  --gray-500:       #8B95A7;
+  --gray-600:       #A8B3C4;
+  --gray-700:       #C4CEDC;
+  --gray-800:       #DCE4F0;
+  --gray-900:       #EEF2F8;
+
+  /* ── Semantic tints (pastel icon backgrounds) ── */
+  --primary-light:  #1E3A6E;
+  --success-light:  #14432A;
+  --warning-light:  #3D2D0A;
+  --danger-light:   #3D1414;
+
+  /* ── Shadows (more visible on dark bg) ── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3),  0 1px 2px rgba(0,0,0,0.2);
+  --shadow:    0 4px 12px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.2);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.4),  0 2px 8px rgba(0,0,0,0.2);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3);
+}
+
+/* ── Body background & text pick up the vars ──── */
+[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Scrollbar in dark mode ──────────────────── */
+[data-theme="dark"] ::-webkit-scrollbar-thumb         { background: var(--gray-300); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover   { background: var(--gray-400); }
+
+/* ── Topbar ──────────────────────────────────── */
+[data-theme="dark"] .topbar {
+  background: var(--surface);
+  border-bottom-color: var(--border);
+}
+
+/* ── Cards ───────────────────────────────────── */
+[data-theme="dark"] .card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .quick-action-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+/* ── Table header row ────────────────────────── */
+[data-theme="dark"] thead th {
+  background: var(--gray-50);
+  border-bottom-color: var(--border);
+}
+[data-theme="dark"] tbody td {
+  border-bottom-color: var(--gray-100);
+  color: var(--gray-700);
+}
+[data-theme="dark"] tbody tr:hover td { background: var(--gray-50); }
+[data-theme="dark"] .td-primary { color: var(--gray-900); }
+
+/* ── Stat-card icon pastel circles in dark mode ─ */
+[data-theme="dark"] .stat-card-icon.blue   { background: #1E3A6E; color: #60A5FA; }
+[data-theme="dark"] .stat-card-icon.green  { background: #14432A; color: #4ADE80; }
+[data-theme="dark"] .stat-card-icon.orange { background: #3D2D0A; color: #FBB848; }
+[data-theme="dark"] .stat-card-icon.red    { background: #3D1414; color: #F87171; }
+[data-theme="dark"] .stat-card-icon.purple { background: #2D1F5E; color: #A78BFA; }
+
+/* ── Badges ──────────────────────────────────── */
+[data-theme="dark"] .badge-green  { background: #14432A; color: #4ADE80; }
+[data-theme="dark"] .badge-blue   { background: #1E3A6E; color: #60A5FA; }
+[data-theme="dark"] .badge-orange { background: #3D2D0A; color: #FBB848; }
+[data-theme="dark"] .badge-red    { background: #3D1414; color: #F87171; }
+[data-theme="dark"] .badge-gray   { background: var(--gray-100); color: var(--gray-600); }
+[data-theme="dark"] .badge-purple { background: #2D1F5E; color: #A78BFA; }
+
+/* ── Buttons ─────────────────────────────────── */
+[data-theme="dark"] .btn-secondary {
+  background: var(--surface);
+  color: var(--gray-700);
+  border-color: var(--border);
+}
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+}
+[data-theme="dark"] .btn-ghost { color: var(--gray-600); }
+[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+/* ── Form controls ───────────────────────────── */
+[data-theme="dark"] .form-control {
+  background: var(--gray-50);
+  border-color: var(--gray-200);
+  color: var(--gray-900);
+}
+[data-theme="dark"] .form-control::placeholder { color: var(--gray-400); }
+[data-theme="dark"] .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.2);
+}
+[data-theme="dark"] .form-control:disabled { background: var(--gray-100); }
+[data-theme="dark"] .form-label { color: var(--gray-700); }
+
+/* ── Search bar ──────────────────────────────── */
+[data-theme="dark"] .search-bar input {
+  background: var(--gray-50);
+  border-color: var(--border);
+  color: var(--gray-700);
+}
+[data-theme="dark"] .search-bar input:focus {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+/* ── Topbar icon button hover ────────────────── */
+[data-theme="dark"] .topbar-icon-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+/* ── Tab bar ─────────────────────────────────── */
+[data-theme="dark"] .tab-bar       { border-bottom-color: var(--border); }
+[data-theme="dark"] .tab-btn       { color: var(--text-muted); }
+[data-theme="dark"] .tab-btn:hover { color: var(--gray-900); }
+
+/* ── Empty state ─────────────────────────────── */
+[data-theme="dark"] .empty-state-icon {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+/* ── Alerts ──────────────────────────────────── */
+[data-theme="dark"] .alert-error  { background: #3D1414; color: #FCA5A5; border-color: #7F1D1D; }
+[data-theme="dark"] .alert-success{ background: #14432A; color: #86EFAC; border-color: #166534; }
+[data-theme="dark"] .alert-info   { background: #1E3A6E; color: #93C5FD; border-color: #1D4ED8; }
+
+/* ── Recharts tooltip already uses inline styles;
+      chart grid lines pick up via stroke vars below */
+[data-theme="dark"] .recharts-cartesian-grid line { stroke: #2D3548; }
+[data-theme="dark"] .recharts-text { fill: var(--text-muted) !important; }
+
+/* ── Login page: keep its own dark gradient; only
+      the white right-panel needs a dark override ── */
+[data-theme="dark"] .auth-right {
+  background: var(--surface);
+}
+[data-theme="dark"] .auth-tabs {
+  background: var(--gray-100);
+}
+[data-theme="dark"] .auth-tab.active {
+  background: var(--gray-50);
+  color: var(--gray-900);
+}

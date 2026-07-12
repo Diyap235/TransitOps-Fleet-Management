@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Truck, UserRound, Route,
   Wrench, BarChart3, LogOut, Bell, Truck as TruckIcon,
-  Moon, Sun, Search,
+  Moon, Sun, Search, Droplet,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -11,29 +11,34 @@ import { ToastProvider, ToastContainer } from '../context/ToastContext';
 import CommandPalette from './CommandPalette';
 
 const NAV = [
-  { to: '/',            label: 'Dashboard',   Icon: LayoutDashboard },
-  { to: '/vehicles',    label: 'Vehicles',    Icon: Truck           },
-  { to: '/drivers',     label: 'Drivers',     Icon: UserRound       },
-  { to: '/trips',       label: 'Trips',       Icon: Route           },
-  { to: '/maintenance', label: 'Maintenance', Icon: Wrench          },
-  { to: '/reports',     label: 'Reports',     Icon: BarChart3       },
+  { to: '/',              label: 'Dashboard',       Icon: LayoutDashboard, route: '/' },
+  { to: '/vehicles',      label: 'Vehicles',        Icon: Truck,           route: '/vehicles' },
+  { to: '/drivers',       label: 'Drivers',         Icon: UserRound,       route: '/drivers' },
+  { to: '/trips',         label: 'Trips',           Icon: Route,           route: '/trips' },
+  { to: '/maintenance',   label: 'Maintenance',     Icon: Wrench,          route: '/maintenance' },
+  { to: '/fuel-expenses', label: 'Fuel & Expenses', Icon: Droplet,         route: '/fuel-expenses' },
+  { to: '/reports',       label: 'Reports',         Icon: BarChart3,       route: '/reports' },
 ];
 
 const PAGE_TITLES = {
-  '/':            'Dashboard',
-  '/vehicles':    'Vehicles',
-  '/drivers':     'Drivers',
-  '/trips':       'Trips',
-  '/maintenance': 'Maintenance',
-  '/reports':     'Reports',
+  '/':              'Dashboard',
+  '/vehicles':      'Vehicles',
+  '/drivers':       'Drivers',
+  '/trips':         'Trips',
+  '/maintenance':   'Maintenance',
+  '/fuel-expenses': 'Fuel & Expenses',
+  '/reports':       'Reports',
 };
 
 const LayoutInner = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, canAccessRoute } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate  = useNavigate();
   const location  = useLocation();
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Filter nav items based on RBAC permissions
+  const visibleNav = NAV.filter(item => canAccessRoute(item.route));
 
   // Live clock
   const fmt = () => new Date().toLocaleTimeString('en-GB', { hour12: false });
@@ -62,6 +67,18 @@ const LayoutInner = ({ children }) => {
     : 'U';
   const pageTitle = PAGE_TITLES[location.pathname] ?? 'TransitOps';
 
+  // Format role for display
+  const formatRole = (role) => {
+    if (!role) return 'Member';
+    const roleMap = {
+      FleetManager: 'Fleet Manager',
+      Driver: 'Driver',
+      SafetyOfficer: 'Safety Officer',
+      FinancialAnalyst: 'Financial Analyst',
+    };
+    return roleMap[role] || role;
+  };
+
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
@@ -83,7 +100,7 @@ const LayoutInner = ({ children }) => {
 
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">Main Menu</div>
-          {NAV.map(({ to, label, Icon }) => (
+          {visibleNav.map(({ to, label, Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -101,7 +118,7 @@ const LayoutInner = ({ children }) => {
             <div className="sidebar-avatar">{initials}</div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">{user?.name ?? 'User'}</div>
-              <div className="sidebar-user-role">{user?.role ?? 'Member'}</div>
+              <div className="sidebar-user-role">{formatRole(user?.role)}</div>
             </div>
             <button className="sidebar-logout-btn" onClick={handleLogout} title="Sign out">
               <LogOut size={15} strokeWidth={2} />

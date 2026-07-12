@@ -1,8 +1,36 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Truck, UserRound, Route, Wrench, BarChart3, Activity, CheckCircle, TrendingUp, Filter, X } from 'lucide-react';
+<<<<<<< HEAD
+import { Truck, UserRound, Route, Wrench, BarChart3, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { vehicles, drivers, trips, maintenanceRecords } from '../data/dummyData';
+
+// ── helpers ───────────────────────────────────────────────────────
+const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+
+const regionOf = (loc = '') => {
+  const parts = loc.split(',');
+  return parts.length > 1 ? parts[parts.length - 1].trim() : loc.trim();
+};
+
+// Derive vehicle type from model string (first word)
+const typeOf = (model = '') => model.split(' ')[0];
+
+// ── color tokens ─────────────────────────────────────────────────
+const ACCENT = {
+  blue:   { icon: '#2563EB', bg: '#EFF6FF', border: '#2563EB' },
+  teal:   { icon: '#0D9488', bg: '#F0FDF9', border: '#0D9488' },
+  green:  { icon: '#16A34A', bg: '#F0FDF4', border: '#16A34A' },
+  violet: { icon: '#7C3AED', bg: '#F5F3FF', border: '#7C3AED' },
+  amber:  { icon: '#D97706', bg: '#FFFBEB', border: '#D97706' },
+  orange: { icon: '#EA580C', bg: '#FFF7ED', border: '#EA580C' },
+  sky:    { icon: '#0284C7', bg: '#F0F9FF', border: '#0284C7' },
+};
+=======
+import { Truck, UserRound, Route, Wrench, BarChart3, Activity, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { dashboardStats, trips, maintenanceRecords, vehicles } from '../data/dummyData';
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
 
 const TRIP_STATUS_COLOR = {
   Dispatched: { bg: 'rgba(76,141,255,0.15)',  color: '#60A5FA' },
@@ -17,6 +45,66 @@ const MAINT_PRIORITY_COLOR = {
   Low:    { bg: 'rgba(47,212,168,0.15)',  color: '#2FD4A8' },
 };
 
+<<<<<<< HEAD
+const QUICK = [
+  { to: '/vehicles',    label: 'Vehicles',    Icon: Truck,     color: 'blue'   },
+  { to: '/drivers',     label: 'Drivers',     Icon: UserRound, color: 'violet' },
+  { to: '/trips',       label: 'Trips',       Icon: Route,     color: 'teal'   },
+  { to: '/maintenance', label: 'Maintenance', Icon: Wrench,    color: 'amber'  },
+  { to: '/reports',     label: 'Reports',     Icon: BarChart3, color: 'sky'    },
+];
+
+// ── StatCard ──────────────────────────────────────────────────────
+const StatCard = ({ label, value, Icon, color, sub }) => {
+  const c = ACCENT[color] ?? ACCENT.blue;
+  return (
+    <div className="stat-card" style={{ borderTop: `2px solid ${c.border}` }}>
+      <div className="stat-card-header">
+        <div className="stat-card-icon" style={{ background: c.bg, color: c.icon }}>
+          <Icon size={18} strokeWidth={2} />
+        </div>
+      </div>
+      <div className="stat-card-value" style={{ fontFamily: "'JetBrains Mono',monospace" }}>
+        {value}
+      </div>
+      <div className="stat-card-label">{label}</div>
+      {sub && (
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4,
+          fontFamily: "'JetBrains Mono',monospace", letterSpacing: '0.5px' }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── FilterSelect ──────────────────────────────────────────────────
+const FilterSelect = ({ label, value, onChange, options }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)',
+      whiteSpace: 'nowrap', fontFamily: "'Space Grotesk',sans-serif" }}>
+      {label}
+    </label>
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        height: 32, padding: '0 28px 0 10px', border: '1px solid var(--border)',
+        borderRadius: 20, fontSize: 12, fontFamily: "'Inter',sans-serif",
+        background: 'var(--surface)', color: 'var(--text)', outline: 'none',
+        cursor: 'pointer', appearance: 'none',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+        backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+      }}
+    >
+      <option value="">All</option>
+      {options.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────
+=======
 const QUICK_ACTIONS = [
   { to: '/vehicles',    label: 'Vehicles',    sub: 'FLEET REGISTRY', Icon: Truck,     accent: 'var(--dc-blue)',   accentBg: 'var(--dc-blue-bg)'   },
   { to: '/drivers',     label: 'Drivers',     sub: 'CREW ROSTER',    Icon: UserRound, accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
@@ -28,19 +116,89 @@ const QUICK_ACTIONS = [
 const recentTrips = trips.slice(0, 5);
 const recentMaint = maintenanceRecords.slice(0, 5);
 
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
 const Dashboard = () => {
   const { user } = useAuth();
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Filter states
-  const [vehicleType, setVehicleType] = useState('All');
-  const [status, setStatus] = useState('All');
-  const [region, setRegion] = useState('All');
+<<<<<<< HEAD
+  // ── filter state ───────────────────────────────────────────────
+  const [filterType,   setFilterType]   = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterRegion, setFilterRegion] = useState('');
 
+  const hasFilters = filterType || filterStatus || filterRegion;
+
+  // ── derive dropdown options from data ─────────────────────────
+  const typeOptions   = useMemo(() => uniq(vehicles.map(v => typeOf(v.model))), []);
+  const statusOptions = ['Available', 'On Trip', 'Maintenance'];
+  const regionOptions = useMemo(() => uniq(vehicles.map(v => regionOf(v.location))), []);
+
+  // ── filtered vehicle base ──────────────────────────────────────
+  const filteredVehicles = useMemo(() => vehicles.filter(v => {
+    if (filterType   && typeOf(v.model)      !== filterType)   return false;
+    if (filterStatus && v.status             !== filterStatus) return false;
+    if (filterRegion && regionOf(v.location) !== filterRegion) return false;
+    return true;
+  }), [filterType, filterStatus, filterRegion]);
+
+  // ── KPI counts derived from filteredVehicles ───────────────────
+  const kpis = useMemo(() => {
+    const total       = filteredVehicles.length;
+    const active      = filteredVehicles.filter(v => v.status === 'On Trip').length;
+    const available   = filteredVehicles.filter(v => v.status === 'Available').length;
+    const inShop      = filteredVehicles.filter(v => v.status === 'Maintenance' || v.status === 'In Shop').length;
+    const utilization = total > 0 ? Math.round((active / total) * 100) : 0;
+
+    // Trip KPIs: filter by vehicles in the filtered set
+    const filteredRegNos = new Set(filteredVehicles.map(v => v.registrationNumber));
+    const scopedTrips = hasFilters
+      ? trips.filter(t => filteredRegNos.has(t.vehicle))
+      : trips;
+    const activeTrips  = scopedTrips.filter(t => t.status === 'Dispatched').length;
+    const pendingTrips = scopedTrips.filter(t => t.status === 'Draft').length;
+
+    // Drivers on duty = drivers currently On Trip and assigned to a filtered vehicle
+    const assignedDrivers = new Set(filteredVehicles.filter(v => v.status === 'On Trip').map(v => v.driver));
+    const driversOnDuty   = hasFilters
+      ? drivers.filter(d => d.status === 'On Trip' && assignedDrivers.has(d.name)).length
+      : drivers.filter(d => d.status === 'On Trip').length;
+
+    return { total, active, available, inShop, utilization, activeTrips, pendingTrips, driversOnDuty };
+  }, [filteredVehicles, hasFilters]);
+
+  // ── filtered Recent Trips & Maintenance ───────────────────────
+  const filteredRegNos = useMemo(
+    () => new Set(filteredVehicles.map(v => v.registrationNumber)),
+    [filteredVehicles]
+  );
+
+  const recentTrips = useMemo(() => {
+    const base = hasFilters ? trips.filter(t => filteredRegNos.has(t.vehicle)) : trips;
+    return base.slice(0, 5);
+  }, [filteredRegNos, hasFilters]);
+
+  const recentMaint = useMemo(() => {
+    const base = hasFilters
+      ? maintenanceRecords.filter(r => filteredRegNos.has(r.vehicle))
+      : maintenanceRecords;
+    return base.slice(0, 5);
+  }, [filteredRegNos, hasFilters]);
+
+  const STAT_CARDS = [
+    { label: 'Active Vehicles',      value: kpis.active,       Icon: Truck,     color: 'teal',   sub: 'Currently on trip'     },
+    { label: 'Available Vehicles',   value: kpis.available,    Icon: Truck,     color: 'green',  sub: 'Ready to dispatch'      },
+    { label: 'In Maintenance',       value: kpis.inShop,       Icon: Wrench,    color: 'amber',  sub: 'In shop / servicing'    },
+    { label: 'Active Trips',         value: kpis.activeTrips,  Icon: Route,     color: 'blue',   sub: 'Dispatched & running'   },
+    { label: 'Pending Trips',        value: kpis.pendingTrips, Icon: Route,     color: 'orange', sub: 'Draft — not dispatched' },
+    { label: 'Drivers On Duty',      value: kpis.driversOnDuty,Icon: UserRound, color: 'violet', sub: 'Currently driving'      },
+    { label: 'Fleet Utilization',    value: `${kpis.utilization}%`, Icon: BarChart3, color: 'sky', sub: 'Active ÷ Total' },
+=======
   // Compute KPIs from actual data
   const availableVehicles = vehicles.filter(v => v.status === 'Available').length;
   const vehiclesInMaintenance = vehicles.filter(v => v.status === 'In Shop' || v.status === 'Maintenance').length;
+  const pendingTrips = trips.filter(t => t.status === 'Draft').length;
 
   // Extended STAT_CARDS with missing KPIs
   const COMPUTED_STAT_CARDS = [
@@ -50,21 +208,8 @@ const Dashboard = () => {
     { label: 'Active Trips',          caption: 'ROUTE LOG',          value: dashboardStats.activeTrips,      Icon: Route,       accent: 'var(--dc-teal)',   accentBg: 'var(--dc-teal-bg)'   },
     { label: 'Drivers Available',     caption: 'CREW ROSTER',        value: dashboardStats.driversAvailable, Icon: UserRound,  accent: 'var(--dc-violet)', accentBg: 'var(--dc-violet-bg)' },
     { label: 'Open Maintenance',      caption: 'SERVICE DESK',       value: dashboardStats.openMaintenance,  Icon: TrendingUp,  accent: 'var(--dc-red)',    accentBg: 'var(--dc-red-bg)'    },
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
   ];
-
-  // Get unique vehicle types and regions from data
-  const vehicleTypes = ['All', ...new Set(vehicles.map(v => v.model?.split(' ')[0] || 'Other'))];
-  const regions = ['All', ...new Set(vehicles.map(v => v.location?.split(',')[1]?.trim() || 'Other'))];
-  const statuses = ['All', 'Dispatched', 'Completed', 'Cancelled'];
-
-  // Filter trips and maintenance records
-  const filteredTrips = trips.filter(t => {
-    let matches = true;
-    if (status !== 'All' && t.status !== status) matches = false;
-    return matches;
-  }).slice(0, 5);
-
-  const filteredMaint = maintenanceRecords.slice(0, 5);
 
   return (
     <>
@@ -75,36 +220,6 @@ const Dashboard = () => {
           <p>Here is what is happening with your fleet today.</p>
         </div>
         <span className="live-badge"><span className="live-badge-dot" />LIVE</span>
-      </div>
-
-      {/* ── Filter Controls ── */}
-      <div className="card" style={{ marginBottom: 20, background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(30, 41, 59, 0.8)' }}>
-        <div className="card-body" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', padding: '12px 16px' }}>
-          <Filter size={16} strokeWidth={2} style={{ color: 'var(--dc-text-faint)' }} />
-          <label style={{ fontSize: 12, color: 'var(--dc-text-faint)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Filters:</label>
-          
-          <select value={vehicleType} onChange={e => setVehicleType(e.target.value)}
-            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--dc-bg)', border: '1px solid var(--dc-line)', borderRadius: 6, color: 'var(--dc-text)', cursor: 'pointer' }}>
-            {vehicleTypes.map(t => <option key={t}>{t}</option>)}
-          </select>
-
-          <select value={status} onChange={e => setStatus(e.target.value)}
-            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--dc-bg)', border: '1px solid var(--dc-line)', borderRadius: 6, color: 'var(--dc-text)', cursor: 'pointer' }}>
-            {statuses.map(s => <option key={s}>{s}</option>)}
-          </select>
-
-          <select value={region} onChange={e => setRegion(e.target.value)}
-            style={{ padding: '6px 10px', fontSize: 12, background: 'var(--dc-bg)', border: '1px solid var(--dc-line)', borderRadius: 6, color: 'var(--dc-text)', cursor: 'pointer' }}>
-            {regions.map(r => <option key={r}>{r}</option>)}
-          </select>
-
-          {(vehicleType !== 'All' || status !== 'All' || region !== 'All') && (
-            <button onClick={() => { setVehicleType('All'); setStatus('All'); setRegion('All'); }}
-              style={{ marginLeft: 'auto', padding: '6px 10px', fontSize: 11, background: 'transparent', border: '1px solid var(--dc-red)', borderRadius: 6, color: 'var(--dc-red)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <X size={13} />Clear Filters
-            </button>
-          )}
-        </div>
       </div>
 
       {/* ── DC Stat cards with animated connector rail ── */}
@@ -131,12 +246,65 @@ const Dashboard = () => {
         </div>
       </div>
 
+<<<<<<< HEAD
+      {/* ── Filter row ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+        padding: '10px 0', marginBottom: 16,
+      }}>
+        <FilterSelect label="Vehicle Type" value={filterType}   onChange={setFilterType}   options={typeOptions}   />
+        <FilterSelect label="Status"       value={filterStatus} onChange={setFilterStatus} options={statusOptions} />
+        <FilterSelect label="Region"       value={filterRegion} onChange={setFilterRegion} options={regionOptions} />
+        {hasFilters && (
+          <button
+            onClick={() => { setFilterType(''); setFilterStatus(''); setFilterRegion(''); }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              height: 32, padding: '0 12px', border: '1px solid var(--border)',
+              borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              background: 'var(--gray-100)', color: 'var(--text-muted)',
+              fontFamily: "'Inter',sans-serif",
+            }}
+          >
+            <X size={12} strokeWidth={2.5} />
+            Clear filters
+          </button>
+        )}
+        {hasFilters && (
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono',monospace" }}>
+            {filteredVehicles.length} / {vehicles.length} vehicles
+          </span>
+        )}
+      </div>
+
+      {/* ── KPI strip — 4 top, 3 bottom ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        {STAT_CARDS.map(c => <StatCard key={c.label} {...c} />)}
+      </div>
+
+      {/* ── Quick actions ── */}
+=======
       {/* ── Quick Actions ── */}
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card-header">
           <span className="card-title font-grotesk">Quick Actions</span>
         </div>
         <div className="card-body">
+<<<<<<< HEAD
+          <div className="quick-action-grid">
+            {QUICK.map(({ to, label, Icon, color }) => {
+              const c = ACCENT[color] ?? ACCENT.blue;
+              return (
+                <Link key={to} to={to} className="quick-action-card">
+                  <div className="quick-action-icon" style={{ background: c.bg, color: c.icon }}>
+                    <Icon size={17} strokeWidth={2} />
+                  </div>
+                  <span className="quick-action-label">{label}</span>
+                </Link>
+              );
+            })}
+=======
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {QUICK_ACTIONS.map(({ to, label, sub, Icon, accent, accentBg }) => (
               <Link
@@ -152,6 +320,7 @@ const Dashboard = () => {
                 <span className="dc-quick-sub">{sub}</span>
               </Link>
             ))}
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
           </div>
         </div>
       </div>
@@ -162,20 +331,50 @@ const Dashboard = () => {
         {/* Recent Trips */}
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="card-header">
+<<<<<<< HEAD
+            <span className="card-title">Recent Trips</span>
+            <Link to="/trips" style={{ fontSize: 12, color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>View all</Link>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Route</th><th>Driver</th><th>Status</th></tr></thead>
+              <tbody>
+                {recentTrips.length === 0 ? (
+                  <tr><td colSpan={3} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)', fontSize: 13 }}>
+                    No trips match current filters.
+                  </td></tr>
+                ) : recentTrips.map(t => {
+                  const sc = TRIP_STATUS_COLOR[t.status] ?? { bg: '#F1F5F9', color: '#475569' };
+                  return (
+                    <tr key={t.tripId}>
+                      <td className="td-primary" style={{ fontSize: 12 }}>{t.source} → {t.destination}</td>
+                      <td style={{ fontSize: 12, color: '#6B7280' }}>{t.driver}</td>
+                      <td>
+                        <span style={{ background: sc.bg, color: sc.color, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                          {t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+=======
             <span className="card-title font-grotesk">Recent Trips</span>
             <Link to="/trips" style={{ fontSize: 12, color: 'var(--dc-blue)', textDecoration: 'none', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>
               VIEW ALL →
             </Link>
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
           </div>
-          {filteredTrips.length === 0 ? (
+          {recentTrips.length === 0 ? (
             <div className="dc-radar-wrap">
               <div className="dc-radar-ring"><Activity size={22} strokeWidth={1.5} /></div>
-              <h3>No trips found</h3>
-              <p>Adjust filters or dispatched trips will appear here.</p>
+              <h3>No activity yet</h3>
+              <p>Recent trips will appear here once dispatched.</p>
             </div>
           ) : (
             <div className="activity-feed">
-              {filteredTrips.map(t => {
+              {recentTrips.map(t => {
                 const sc = TRIP_STATUS_COLOR[t.status] ?? { bg: 'rgba(107,90,224,0.12)', color: '#9C8CFF' };
                 return (
                   <div className="activity-row" key={t.tripId}>
@@ -197,14 +396,46 @@ const Dashboard = () => {
         </div>
 
         {/* Maintenance Alerts */}
+<<<<<<< HEAD
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Maintenance Alerts</span>
+            <Link to="/maintenance" style={{ fontSize: 12, color: '#2563EB', textDecoration: 'none', fontWeight: 600 }}>View all</Link>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Vehicle</th><th>Issue</th><th>Priority</th></tr></thead>
+              <tbody>
+                {recentMaint.length === 0 ? (
+                  <tr><td colSpan={3} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)', fontSize: 13 }}>
+                    No alerts match current filters.
+                  </td></tr>
+                ) : recentMaint.map(r => {
+                  const pc = MAINT_PRIORITY_COLOR[r.priority] ?? { bg: '#F1F5F9', color: '#475569' };
+                  return (
+                    <tr key={r.id}>
+                      <td className="td-primary" style={{ fontSize: 12 }}>{r.vehicle}</td>
+                      <td style={{ fontSize: 12, color: '#6B7280', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.issue}</td>
+                      <td>
+                        <span style={{ background: pc.bg, color: pc.color, padding: '2px 8px', borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+                          {r.priority}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+=======
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="card-header">
             <span className="card-title font-grotesk">Maintenance Alerts</span>
             <Link to="/maintenance" style={{ fontSize: 12, color: 'var(--dc-red)', textDecoration: 'none', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>
               VIEW ALL →
             </Link>
+>>>>>>> 71abe949efd3319da0dae0163e858d09e8d7023b
           </div>
-          {filteredMaint.length === 0 ? (
+          {recentMaint.length === 0 ? (
             <div className="dc-radar-wrap">
               <div className="dc-radar-ring"><Wrench size={22} strokeWidth={1.5} /></div>
               <h3>All clear</h3>
@@ -212,7 +443,7 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="activity-feed">
-              {filteredMaint.map(r => {
+              {recentMaint.map(r => {
                 const pc = MAINT_PRIORITY_COLOR[r.priority] ?? { bg: 'rgba(107,90,224,0.12)', color: '#9C8CFF' };
                 return (
                   <div className="activity-row" key={r.id}>

@@ -23,7 +23,7 @@ const Login = () => {
     setError('');
   };
 
-  const handleSignIn = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -43,7 +43,7 @@ const Login = () => {
         : await registerUser({ name: form.name, email: form.email, password: form.password });
 
       login(res.data.user, res.data.token);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -134,7 +134,7 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSignIn} autoComplete="off" noValidate>
+          <form onSubmit={handleSubmit} autoComplete="off" noValidate>
 
             {/* Full name — register only */}
             {tab === 'register' && (

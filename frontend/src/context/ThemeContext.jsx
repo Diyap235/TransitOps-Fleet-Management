@@ -2,18 +2,19 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext(null);
 
+const STORAGE_KEY = 'transitops_theme';
+
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('transitops_theme') || 'dark';
+    return localStorage.getItem(STORAGE_KEY) || 'light';
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', theme);
-    localStorage.setItem('transitops_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
@@ -24,7 +25,7 @@ export const ThemeProvider = ({ children }) => {
 
 export const useTheme = () => {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
   return ctx;
 };
 

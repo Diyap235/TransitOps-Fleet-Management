@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2, AlertCircle } from 'lucide-react';
+=======
+import React, { useState, useRef } from 'react';
+import { Download, TrendingUp, TrendingDown, Gauge, Fuel, DollarSign, BarChart2, FileText, FileType } from 'lucide-react';
+>>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -136,9 +141,73 @@ const ChartTooltip = ({ active, payload, label, unit = '' }) => {
   );
 };
 
+// ─── Export helpers ───────────────────────────────────────────────────────────
+
+const exportAsTxt = () => {
+  const now = new Date().toLocaleString();
+  const lines = [
+    '================================================',
+    '         TRANSITOPS — ANALYTICS REPORT          ',
+    '================================================',
+    `Generated: ${now}`,
+    '',
+    '── KPI SUMMARY ─────────────────────────────────',
+    `Fleet Utilization   : 82%    (+5.1% vs last period)`,
+    `Fuel Efficiency     : 6.4 km/L  (+1.9%)`,
+    `Vehicle ROI         : 17.2%  (+1.4%)`,
+    `Cost per KM         : $0.42  (-2.3%)`,
+    '',
+    '── FLEET UTILIZATION (Last 12 months) ───────────',
+    'Month   Utilization(%)',
+    ...fleetUtilizationData.map(d => `${d.month.padEnd(8)}${d.utilization}%`),
+    '',
+    '── FUEL EFFICIENCY (Last 12 months) ─────────────',
+    'Month   km/L',
+    ...fuelEfficiencyData.map(d => `${d.month.padEnd(8)}${d.efficiency}`),
+    '',
+    '── VEHICLE ROI (Last 12 months) ─────────────────',
+    'Month   ROI(%)',
+    ...vehicleRoiData.map(d => `${d.month.padEnd(8)}${d.roi}%`),
+    '',
+    '── COST TRENDS (Last 12 months) ─────────────────',
+    'Month   Cost/km($)',
+    ...costTrendsData.map(d => `${d.month.padEnd(8)}$${d.costPerKm}`),
+    '',
+    '================================================',
+    '  TransitOps — Smart Transport Operations       ',
+    '================================================',
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `transitops-report-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportAsPdf = (reportRef) => {
+  const style = document.createElement('style');
+  style.textContent = `
+    @media print {
+      body * { visibility: hidden; }
+      #report-print-area, #report-print-area * { visibility: visible; }
+      #report-print-area {
+        position: fixed; top: 0; left: 0; width: 100%;
+        background: #fff; color: #000; padding: 24px;
+      }
+      .recharts-wrapper { page-break-inside: avoid; }
+    }
+  `;
+  document.head.appendChild(style);
+  window.print();
+  document.head.removeChild(style);
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Reports = () => {
+<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState('overview');
   const [fuelLogs, setFuelLogs] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -184,6 +253,14 @@ const Reports = () => {
       alert('Export failed. Please try again.');
     }
   };
+=======
+  const [showFormatMenu, setShowFormatMenu] = useState(false);
+  const reportRef = useRef(null);
+  const hasReportData = fleetUtilizationData.length > 0
+    || fuelEfficiencyData.length > 0
+    || vehicleRoiData.length > 0
+    || costTrendsData.length > 0;
+>>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
 
   return (
     <>
@@ -193,6 +270,7 @@ const Reports = () => {
           <h1>Reports &amp; Analytics</h1>
           <p>Deep insights into utilization, efficiency and ROI.</p>
         </div>
+<<<<<<< HEAD
       </div>
 
       {error && (
@@ -274,10 +352,72 @@ const Reports = () => {
               <Download size={15} strokeWidth={2} />
               Export CSV
             </button>
+=======
+
+        {/* Export button with dropdown */}
+        <div style={{ position: 'relative' }}>
+          <button
+            className="btn"
+            style={{ background: 'linear-gradient(135deg,#16A34A,#15803D)', color: '#fff', boxShadow: '0 1px 3px rgba(22,163,74,0.35)' }}
+            onClick={() => setShowFormatMenu(v => !v)}
+          >
+            <Download size={15} strokeWidth={2} />
+            Export Report
+          </button>
+
+          {showFormatMenu && (
+            <>
+              {/* backdrop */}
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                onClick={() => setShowFormatMenu(false)}
+              />
+              {/* dropdown */}
+              <div style={{
+                position: 'absolute', top: '110%', right: 0, zIndex: 99,
+                background: '#fff', border: '1px solid #E5E7EB',
+                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                minWidth: 200, overflow: 'hidden',
+              }}>
+                <div style={{ padding: '10px 14px 6px', fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  Choose format
+                </div>
+                <button
+                  onClick={() => { exportAsTxt(); setShowFormatMenu(false); }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#111827', textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ width: 32, height: 32, borderRadius: 7, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', flexShrink: 0 }}>
+                    <FileText size={16} />
+                  </span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Export as TXT</div>
+                    <div style={{ fontSize: 11, color: '#6B7280' }}>Plain text report file</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { exportAsPdf(reportRef); setShowFormatMenu(false); }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#111827', textAlign: 'left' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ width: 32, height: 32, borderRadius: 7, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#DC2626', flexShrink: 0 }}>
+                    <FileType size={16} />
+                  </span>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>Export as PDF</div>
+                    <div style={{ fontSize: 11, color: '#6B7280' }}>Print to PDF via browser</div>
+                  </div>
+                </button>
+              </div>
+            </>
+>>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
           )}
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* ── Charts only show on Overview tab ── */}
       {activeTab === 'overview' && !loading && (
         <>
@@ -374,10 +514,26 @@ const Reports = () => {
                   <div style={{ width: 12, height: 12, background: '#EF4444', borderRadius: 3 }}></div>
                   <span>Low (0-59%)</span>
                 </div>
+=======
+      {/* ── Printable area starts here ── */}
+      <div id="report-print-area" ref={reportRef}>
+
+      {/* ── KPI Cards ── */}
+      <div className="stats-grid" style={{ marginBottom: 28 }}>
+        {KPI_CARDS.map(({ label, value, trend, up, icon: Icon, iconBg, iconColor }) => (
+          <div className="stat-card" key={label}>
+            <div className="stat-card-header">
+              <div
+                className="stat-card-icon"
+                style={{ background: iconBg, color: iconColor }}
+              >
+                <Icon size={18} strokeWidth={2} />
+>>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
               </div>
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* ── Charts – top row ── */}
           <div
             style={{
@@ -420,6 +576,60 @@ const Reports = () => {
                 </ResponsiveContainer>
               </div>
             </div>
+=======
+      {!hasReportData && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="empty-state">
+            <div className="empty-state-icon"><BarChart3 size={22} strokeWidth={1.5} /></div>
+            <h3>No reports available yet</h3>
+            <p>Generate fleet insights once your data is synced to see charts and trend metrics.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Charts – top row ── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 20,
+          marginBottom: 20,
+        }}
+      >
+        {/* Fleet Utilization – Area */}
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Fleet Utilization</span>
+            <span style={{ fontSize: 12, color: '#6B7280' }}>Last 12 months (%)</span>
+          </div>
+          <div className="card-body" style={{ padding: '16px 8px 8px' }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={fleetUtilizationData} margin={{ top: 4, right: 16, left: -16, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradUtil" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis domain={[60, 90]} tick={{ fontSize: 11, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip unit="%" />} />
+                <Area
+                  type="monotone"
+                  dataKey="utilization"
+                  name="Utilization"
+                  stroke="#2563EB"
+                  strokeWidth={2.5}
+                  fill="url(#gradUtil)"
+                  dot={false}
+                  activeDot={{ r: 5, fill: '#2563EB', strokeWidth: 0 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+>>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
 
             {/* Fuel Efficiency – Bar */}
             <div className="card">
@@ -516,7 +726,12 @@ const Reports = () => {
         <div className="card" style={{ textAlign: 'center', padding: 40 }}>
           <div style={{ color: 'var(--text-muted)' }}>Loading report data...</div>
         </div>
+<<<<<<< HEAD
       )}
+=======
+      </div>
+      </div> {/* end printable area */}
+>>>>>>> 9a771b436abc12df3e7b5dff1390cbde0050b994
     </>
   );
 };

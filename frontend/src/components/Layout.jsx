@@ -3,8 +3,10 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Truck, UserRound, Route,
   Wrench, BarChart3, LogOut, Bell, Truck as TruckIcon,
+  Moon, Sun,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const NAV = [
   { to: '/',            label: 'Dashboard',   Icon: LayoutDashboard },
@@ -26,6 +28,7 @@ const PAGE_TITLES = {
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -98,6 +101,16 @@ const Layout = ({ children }) => {
             <span className="topbar-title">{pageTitle}</span>
           </div>
           <div className="topbar-right">
+            <button
+              className="topbar-icon-btn"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme === 'dark'
+                ? <Sun  size={17} strokeWidth={2} />
+                : <Moon size={17} strokeWidth={2} />}
+            </button>
             <button className="topbar-icon-btn" title="Notifications">
               <Bell size={17} strokeWidth={2} />
             </button>

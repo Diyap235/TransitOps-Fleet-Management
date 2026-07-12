@@ -82,6 +82,13 @@ const updateTrip = async (req, res) => {
       ]);
 
       if (status === 'Dispatched') {
+        // Server-side guard: verify vehicle and driver are actually available
+        if (veh && veh.status !== 'Available') {
+          return res.status(400).json({ message: `Vehicle is currently ${veh.status} and cannot be dispatched` });
+        }
+        if (drv && drv.status !== 'Available') {
+          return res.status(400).json({ message: `Driver is currently ${drv.status} and cannot be dispatched` });
+        }
         if (veh) await Vehicle.findByIdAndUpdate(trip.vehicle, { status: 'On Trip' });
         if (drv) await Driver.findByIdAndUpdate(trip.driver, { status: 'On Trip' });
       }
@@ -110,4 +117,50 @@ const deleteTrip = async (req, res) => {
   }
 };
 
-module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip };
+// Data repair endpoint: clean up stale On Trip statuses
+const repairStatusSync = async (req, res) => {
+  try {
+    // Find all vehicles marked as On Trip
+    const onTripVehicles = await Vehicle.find({ status: 'On Trip' });
+    
+    let repairedVehicles = 0;
+    for (const vehicle of onTripVehicles) {
+      // Check if there's an active Dispatched trip for this vehicle
+      const activeTrip = await Trip.findOne({
+        vehicle: vehicle._id,
+        status: 'Dispatched',
+      });
+      
+      // If no active trip, reset status to Available
+      if (!activeTrip) {
+        await Vehicle.findByIdAndUpdate(vehicle._id, { status: 'Available' });
+        repairedVehicles++;
+      }
+    }
+
+    // Same for drivers
+    const onTripDrivers = await Driver.find({ status: 'On Trip' });
+    let repairedDrivers = 0;
+    for (const driver of onTripDrivers) {
+      const activeTrip = await Trip.findOne({
+        driver: driver._id,
+        status: 'Dispatched',
+      });
+      
+      if (!activeTrip) {
+        await Driver.findByIdAndUpdate(driver._id, { status: 'Available' });
+        repairedDrivers++;
+      }
+    }
+
+    res.json({
+      message: 'Status sync repair completed',
+      vehiclesRepaired: repairedVehicles,
+      driversRepaired: repairedDrivers,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = { getAllTrips, getTripById, createTrip, updateTrip, deleteTrip, repairStatusSync };

@@ -16,22 +16,32 @@ const EMPTY_FORM = {
 
 const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: 20 }}>
-    <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #E5E7EB', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
-        <span style={{ fontWeight: 700, fontSize: 15 }}>{title}</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}><X size={18} /></button>
+    <div style={{ 
+      background: 'rgba(30, 36, 51, 0.95)',
+      backdropFilter: 'blur(12px)',
+      borderRadius: 14, 
+      width: '100%', 
+      maxWidth: 520, 
+      boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+      border: '1px solid rgba(76, 141, 255, 0.15)',
+      maxHeight: '90vh', 
+      overflowY: 'auto' 
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid rgba(45, 53, 72, 0.6)', position: 'sticky', top: 0, background: 'rgba(30, 36, 51, 0.95)', zIndex: 1 }}>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#E2E8F0' }}>{title}</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8B95A7' }}><X size={18} /></button>
       </div>
       <form onSubmit={onSubmit} style={{ padding: 24 }}>
         {error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEE2E2', color: '#B91C1C', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239, 68, 68, 0.15)', color: '#FCA5A5', padding: '10px 14px', borderRadius: 8, fontSize: 13, marginBottom: 16, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
             <AlertCircle size={14} style={{ flexShrink: 0 }} />{error}
           </div>
         )}
 
         {/* Full Name */}
         <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>Full Name</label>
-          <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>Full Name</label>
+          <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
             type="text" placeholder="e.g. Rajesh Kumar" value={form.name}
             onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
         </div>
@@ -39,48 +49,48 @@ const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {/* License Number */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>License Number</label>
-            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>License Number</label>
+            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
               type="text" placeholder="e.g. DL1234567890" value={form.licenseNumber}
               onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))} required />
           </div>
 
           {/* License Category */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>License Category</label>
-            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>License Category</label>
+            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
               type="text" placeholder="e.g. HMV" value={form.licenseCategory}
               onChange={e => setForm(f => ({ ...f, licenseCategory: e.target.value }))} required />
           </div>
 
           {/* Expiry Date */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>License Expiry Date</label>
-            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>License Expiry Date</label>
+            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
               type="date" value={form.licenseExpiryDate}
               onChange={e => setForm(f => ({ ...f, licenseExpiryDate: e.target.value }))} required />
           </div>
 
           {/* Contact */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>Contact Number</label>
-            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>Contact Number</label>
+            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
               type="text" placeholder="+91 9876543210" value={form.contactNumber}
               onChange={e => setForm(f => ({ ...f, contactNumber: e.target.value }))} required />
           </div>
 
           {/* Safety Score */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>Safety Score (0–100)</label>
-            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none' }}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>Safety Score (0–100)</label>
+            <input style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
               type="number" placeholder="100" min="0" max="100" value={form.safetyScore}
               onChange={e => setForm(f => ({ ...f, safetyScore: e.target.value }))} required />
           </div>
 
           {/* Status */}
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#374151' }}>Status</label>
-            <select style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #E5E7EB', borderRadius: 8, fontSize: 13, outline: 'none', background: '#fff' }}
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6, color: '#C4CEDC' }}>Status</label>
+            <select style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid rgba(45, 53, 72, 0.6)', borderRadius: 8, fontSize: 13, outline: 'none', background: 'rgba(26, 31, 46, 0.8)', color: '#E2E8F0' }}
               value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
               {['Available', 'On Trip', 'Off Duty', 'Suspended'].map(s => <option key={s}>{s}</option>)}
             </select>
@@ -89,11 +99,11 @@ const Modal = ({ title, onClose, onSubmit, form, setForm, loading, error }) => (
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 22 }}>
           <button type="button" onClick={onClose}
-            style={{ height: 36, padding: '0 16px', border: '1px solid #E5E7EB', borderRadius: 7, background: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
+            style={{ height: 36, padding: '0 16px', border: '1px solid rgba(45, 53, 72, 0.6)', borderRadius: 7, background: 'rgba(30, 36, 51, 0.5)', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#C4CEDC' }}>
             Cancel
           </button>
           <button type="submit" disabled={loading}
-            style={{ height: 36, padding: '0 16px', border: 'none', borderRadius: 7, background: loading ? '#93C5FD' : '#2563EB', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+            style={{ height: 36, padding: '0 16px', border: 'none', borderRadius: 7, background: loading ? 'rgba(37, 99, 235, 0.6)' : 'linear-gradient(135deg, #2563EB, #0EA5E9)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
             {loading && <span style={{ width: 13, height: 13, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} />}
             {loading ? 'Saving…' : 'Save Driver'}
           </button>
@@ -260,10 +270,25 @@ const Drivers = () => {
                       <td>{new Date(d.licenseExpiryDate).toLocaleDateString()}</td>
                       <td>{d.contactNumber}</td>
                       <td>
-                        <span style={{ fontWeight: 700, color: scoreColor }}>
-                          {score}
-                          <span style={{ fontWeight: 400, color: '#6B7280', fontSize: 11 }}>/100</span>
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <svg width="32" height="32" style={{ transform: 'rotate(-90deg)' }}>
+                            <circle cx="16" cy="16" r="14" fill="none" stroke="#E5E7EB" strokeWidth="2" />
+                            <circle 
+                              cx="16" 
+                              cy="16" 
+                              r="14" 
+                              fill="none" 
+                              stroke={score >= 80 ? '#16A34A' : score >= 60 ? '#D97706' : '#DC2626'}
+                              strokeWidth="2"
+                              strokeDasharray={`${(score / 100) * 88} 88`}
+                              style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                            />
+                          </svg>
+                          <span style={{ fontWeight: 700, color: score >= 80 ? '#16A34A' : score >= 60 ? '#D97706' : '#DC2626' }}>
+                            {score}
+                            <span style={{ fontWeight: 400, color: '#6B7280', fontSize: 11 }}>/100</span>
+                          </span>
+                        </div>
                       </td>
                       <td>
                         <span className={`badge ${STATUS_BADGE[d.status] ?? 'badge-gray'}`}>
